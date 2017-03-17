@@ -29,8 +29,8 @@ namespace saf
 
 	std::atomic_int Thread::s_threadCount(0);
 
-	Thread::Thread(const ThreadFunc& threadFunc, const std::string& name) :
-		_threadFunc(std::move(threadFunc)),
+	Thread::Thread(ThreadFunc&& threadFunc, const std::string& name) :
+		_threadFunc(threadFunc),
 		_name(name)
 	{
 		++s_threadCount;

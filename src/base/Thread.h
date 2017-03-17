@@ -20,18 +20,19 @@ namespace saf
 	public:
 		typedef std::function<void ()> ThreadFunc;
 
-		explicit Thread(const ThreadFunc& threadFunc, const std::string& name="");
+		explicit Thread(ThreadFunc&& threadFunc, const std::string& name="");
 		~Thread();
 
 		void start();
 		void join();
 
 	private:
-		std::unique_ptr<std::thread>	_thread;
-		ThreadFunc						_threadFunc;
-		std::string						_name;
+		std::unique_ptr<std::thread> _thread;
+		ThreadFunc _threadFunc;
+		std::string _name;
 
-		static std::atomic<int>			s_threadCount;
+	private:
+		static std::atomic<int>	s_threadCount;
 	};
 
 }
