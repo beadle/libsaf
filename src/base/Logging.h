@@ -17,7 +17,7 @@ namespace saf
 		WARN,
 		ERROR,
 		FATAL,
-		LEVEL_COUNT,
+		COUNT,
 	};
 
 	extern void log(LogLevel level, const char* file, int line, const char* function, const char* content);

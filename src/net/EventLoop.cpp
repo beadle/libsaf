@@ -9,6 +9,7 @@
 #include "Fd.h"
 #include "Poller.h"
 #include "EventLoop.h"
+#include "TimerQueue.h"
 
 
 namespace
@@ -29,7 +30,7 @@ namespace
 namespace saf
 {
 
-	const int kPollTimeMs = 1000;
+	const int kPollTimeMs = 33;
 
 	EventLoop::EventLoop() :
 		_threadId(CurrentThread::tid()),
@@ -38,7 +39,8 @@ namespace saf
 		_handling(false),
 		_currentFd(nullptr),
 		_wakeupFd(new Fd(this, createEventfd())),
-		_poller(Poller::createPoller())
+		_poller(Poller::createPoller()),
+		_timerQueue(new TimerQueue(this))
 	{
 		_wakeupFd->enableRead();
 		_wakeupFd->setReadCallback(std::bind(&EventLoop::handleWakeupRead, this));
@@ -70,8 +72,8 @@ namespace saf
 			_currentFd = nullptr;
 			_handling = false;
 
-			std::cout << "[EventLoop::pool] sizeof activeFds: " << activeFds.size() << std::endl;
 			runFunctors();
+			runTimers();
 		}
 
 		_looping = false;
@@ -92,6 +94,16 @@ namespace saf
 		{
 			queueInLoop(std::move(functor));
 		}
+	}
+
+	int EventLoop::addTimer(float delay, Functor &&callback, bool repeated)
+	{
+		return _timerQueue->addTimer(delay, std::move(callback), repeated);
+	}
+
+	void EventLoop::cancelTimer(int fd)
+	{
+		_timerQueue->cancelTimer(fd);
 	}
 
 	void EventLoop::queueInLoop(Functor &&functor)
@@ -148,6 +160,14 @@ namespace saf
 		for (auto functor : functors)
 		{
 			functor();
+		}
+	}
+
+	void EventLoop::runTimers()
+	{
+		while (_timerQueue->checkTimers())
+		{
+			_timerQueue->popTimer();
 		}
 	}
 

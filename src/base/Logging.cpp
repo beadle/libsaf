@@ -18,7 +18,7 @@ namespace saf
 
 	namespace
 	{
-		const char* LogLevelName[int(LogLevel::LEVEL_COUNT)] =
+		const char* LogLevelName[int(LogLevel::COUNT)] =
 		{
 			"DEBUG ",
 			"INFO  ",

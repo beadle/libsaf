@@ -18,13 +18,14 @@ namespace saf
 {
 	class Fd;
 	class Poller;
+	class TimerQueue;
 
 	class EventLoop
 	{
 	public:
 		typedef std::function<void()> Functor;
 
-	public:
+	public:  // exposed to outers
 		EventLoop();
 		~EventLoop();
 
@@ -32,6 +33,9 @@ namespace saf
 		void quit();
 
 		void runInLoop(Functor&& functor);
+
+		int addTimer(float delay, Functor&& callback, bool repeated=false);
+		void cancelTimer(int fd);
 
 	public:  // exposed to fd objects(Socket, Timer...)
 		bool hasFd(Fd* fd);
@@ -48,6 +52,8 @@ namespace saf
 		void runFunctors();
 		void queueInLoop(Functor&& functor);
 
+		void runTimers();
+
 	private:
 		const pid_t _threadId;
 
@@ -59,6 +65,7 @@ namespace saf
 
 		std::unique_ptr<Fd> _wakeupFd;
 		std::unique_ptr<Poller> _poller;
+		std::unique_ptr<TimerQueue> _timerQueue;
 
 		std::mutex _mutex;
 		std::vector<Functor> _functors;
