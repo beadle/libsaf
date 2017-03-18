@@ -23,7 +23,8 @@ void thread2_func(saf::EventLoop* loop)
 
 int main()
 {
-	saf::startLogger();
+	INIT_LOGGER;
+
 	for (int i=0; i<10; ++i)
 		LOG_DEBUG("fuck you.");
 	::sleep(2);
@@ -35,8 +36,6 @@ int main()
 	std::thread thread2(thread2_func, &loop);
 
 	loop.run();
-
-	saf::stopLogger();
 
 	return 0;
 }

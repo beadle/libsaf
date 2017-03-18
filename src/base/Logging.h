@@ -5,7 +5,7 @@
 #ifndef EXAMPLE_LOGGING_H
 #define EXAMPLE_LOGGING_H
 
-#include <sstream>
+#include <string.h>
 
 
 namespace saf
@@ -21,8 +21,14 @@ namespace saf
 	};
 
 	extern void log(LogLevel level, const char* file, int line, const char* function, const char* content);
-	extern void startLogger();
-	extern void stopLogger();
+
+	class LoggerLauncher
+	{
+	public:
+		LoggerLauncher();
+		~LoggerLauncher();
+	};
+
 
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
@@ -31,6 +37,8 @@ namespace saf
 #define LOG_WARN(__CONTENT__) 	saf::log(saf::LogLevel::WARN, __FILENAME__, __LINE__, __FUNCTION__, __CONTENT__);
 #define LOG_ERROR(__CONTENT__) 	saf::log(saf::LogLevel::ERROR, __FILENAME__, __LINE__, __FUNCTION__, __CONTENT__);
 #define LOG_FATAL(__CONTENT__) 	saf::log(saf::LogLevel::FATAL, __FILENAME__, __LINE__, __FUNCTION__, __CONTENT__);
+
+#define INIT_LOGGER saf::LoggerLauncher __launch__;
 
 }
 

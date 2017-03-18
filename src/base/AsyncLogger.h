@@ -33,11 +33,16 @@ namespace saf
 		}
 
 		const char* data() const { return _data; }
+
 		size_t length() const { return static_cast<size_t>(_curr - _data); }
 		size_t avail() const { return static_cast<size_t>(end() - _curr); }
 		void reset() { _curr = _data; }
 
 		std::string toString() { return std::string(_data, length()); }
+
+	public:  // exposed to function log only
+		char* current() { return _curr; }
+		void add(size_t len) { _curr += len; }
 
 	protected:
 		const char* end() const { return _data + sizeof _data; }
