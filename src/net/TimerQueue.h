@@ -7,7 +7,8 @@
 
 #include <vector>
 #include <unordered_map>
-#include <bits/unique_ptr.h>
+#include <memory>
+#include <atomic>
 
 #include "fd/Timer.h"
 
@@ -40,7 +41,7 @@ namespace saf
 		inline void heapSwap(int posA, int posB);
 
 	private:
-		int _counter;
+		std::atomic_int _counter;
 		EventLoop* _loop;
 
 		std::vector<Timer*> _heap;

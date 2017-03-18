@@ -9,7 +9,7 @@ namespace saf
 {
 
 	Socket::Socket(EventLoop *loop, int fd):
-		Fd(loop, fd)
+		IOFd(loop, fd)
 	{
 
 	}

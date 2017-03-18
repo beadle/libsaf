@@ -21,23 +21,23 @@ namespace saf
 		EPollPoller();
 		~EPollPoller();
 
-		std::vector<Fd*> poll(int timeoutMs);
+		std::vector<IOFd*> poll(int timeoutMs);
 
-	public: // exposed to Fd only
-		bool hasWatcher(Fd* watcher) override;
-		void updateWatcher(Fd* watcher) override;
-		void removeWatcher(Fd* watcher) override;
+	public: // exposed to IOFd only
+		bool hasWatcher(IOFd* watcher) override;
+		void updateWatcher(IOFd* watcher) override;
+		void removeWatcher(IOFd* watcher) override;
 
 	protected:
 		static const int kInitEventListSize = 16;
 
-		void controlFd(int operation, Fd *watcher);
+		void controlFd(int operation, IOFd *watcher);
 
 	private:
 		int _fd;
 
 		typedef std::vector<struct epoll_event> EventList;
-		typedef std::unordered_map<int, Fd*> WatcherMap;
+		typedef std::unordered_map<int, IOFd*> WatcherMap;
 
 		EventList _events;
 		WatcherMap _watchers;  // for querying watcher by getFd only, doesn't own any watcher

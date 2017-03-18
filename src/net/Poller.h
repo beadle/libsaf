@@ -8,7 +8,7 @@
 #include <functional>
 #include <vector>
 
-#include "Fd.h"
+#include "net/fd/IOFd.h"
 
 namespace saf
 {
@@ -20,11 +20,11 @@ namespace saf
 	public:
 		virtual ~Poller() {};
 
-		virtual std::vector<Fd*> poll(int timeoutMs) = 0;
+		virtual std::vector<IOFd*> poll(int timeoutMs) = 0;
 
-		virtual bool hasWatcher(Fd* watcher) = 0;
-		virtual void updateWatcher(Fd* watcher) = 0;
-		virtual void removeWatcher(Fd* watcher) = 0;
+		virtual bool hasWatcher(IOFd* watcher) = 0;
+		virtual void updateWatcher(IOFd* watcher) = 0;
+		virtual void removeWatcher(IOFd* watcher) = 0;
 	};
 
 }

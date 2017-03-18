@@ -6,20 +6,20 @@
 #define LIBSAF_TIMER_H
 
 
+#include "../Fd.h"
 #include <functional>
 
 namespace saf
 {
 	typedef std::function<void()> TimerCallback;
 
-	class Timer
+	class Timer : public Fd
 	{
 	protected:
 		Timer(int fd, long interval, TimerCallback&& callback);
 
 		void handleTimeout();
 
-		int getFd() const { return _fd; }
 		long getInterval() const { return _interval; }
 
 		void setTimestamp(const long& timestamp) { _timestamp = timestamp; }
@@ -35,7 +35,6 @@ namespace saf
 
 	private:
 		bool _repeated;
-		int _fd;
 		int _heapIndex;
 		long _interval;
 		long _timestamp;

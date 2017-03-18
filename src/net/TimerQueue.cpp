@@ -11,9 +11,10 @@
 namespace saf
 {
 	static const int FirstItem = 1;
+	static const int StartFd = -12345;
 
 	TimerQueue::TimerQueue(EventLoop *loop) :
-		_counter(0),
+		_counter(StartFd),
 		_loop(loop),
 		_heap(FirstItem)
 	{
@@ -21,7 +22,7 @@ namespace saf
 
 	int TimerQueue::addTimer(float delay, TimerCallback &&callback, bool repeated)
 	{
-		Timer* ptr = new Timer(++_counter, (long)(delay * 1000), std::move(callback));
+		Timer* ptr = new Timer(--_counter, (long)(delay * 1000), std::move(callback));
 		_loop->runInLoop([=](){
 			TimerPtr timer(ptr);
 			timer->setRepeated(repeated);
@@ -150,6 +151,5 @@ namespace saf
 		_heap[posA]->setHeapIndex(posA);
 		_heap[posB]->setHeapIndex(posB);
 	}
-
 
 }

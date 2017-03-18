@@ -6,7 +6,7 @@
 #include <sys/eventfd.h>
 #include <iostream>
 
-#include "Fd.h"
+#include "net/fd/IOFd.h"
 #include "Poller.h"
 #include "EventLoop.h"
 #include "TimerQueue.h"
@@ -38,7 +38,7 @@ namespace saf
 		_looping(false),
 		_handling(false),
 		_currentFd(nullptr),
-		_wakeupFd(new Fd(this, createEventfd())),
+		_wakeupFd(new IOFd(this, createEventfd())),
 		_poller(Poller::createPoller()),
 		_timerQueue(new TimerQueue(this))
 	{
@@ -112,21 +112,21 @@ namespace saf
 		_functors.push_back(functor);
 	}
 
-	bool EventLoop::hasFd(Fd *fd)
+	bool EventLoop::hasFd(IOFd *fd)
 	{
 		assert(fd->getLooper() == this);
 		assertInLoopThread();
 		return _poller->hasWatcher(fd);
 	}
 
-	void EventLoop::updateFd(Fd *fd)
+	void EventLoop::updateFd(IOFd *fd)
 	{
 		assert(fd->getLooper() == this);
 		assertInLoopThread();
 		_poller->updateWatcher(fd);
 	}
 
-	void EventLoop::removeFd(Fd *fd)
+	void EventLoop::removeFd(IOFd *fd)
 	{
 		assert(fd->getLooper() == this);
 		assertInLoopThread();

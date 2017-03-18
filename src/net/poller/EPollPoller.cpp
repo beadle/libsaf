@@ -23,30 +23,30 @@ namespace saf
 		::close(_fd);
 	}
 
-	bool EPollPoller::hasWatcher(Fd *watcher)
+	bool EPollPoller::hasWatcher(IOFd *watcher)
 	{
 		auto it = _watchers.find(watcher->getFd());
 		return it != _watchers.end() && it->second == watcher;
 	}
 
-	void EPollPoller::updateWatcher(Fd *watcher)
+	void EPollPoller::updateWatcher(IOFd *watcher)
 	{
 		auto status = watcher->getStatus();
 		auto fd = watcher->getFd();
 
-		if (status == Fd::Status::NEW)
+		if (status == IOFd::Status::NEW)
 		{
 			assert(_watchers.find(fd) == _watchers.end());
 
-			watcher->setStatus(Fd::Status::ADDED);
+			watcher->setStatus(IOFd::Status::ADDED);
 			_watchers[fd] = watcher;
 			controlFd(EPOLL_CTL_ADD, watcher);
 		}
-		else if(status == Fd::Status::DELETED)
+		else if(status == IOFd::Status::DELETED)
 		{
 			assert(hasWatcher(watcher));
 
-			watcher->setStatus(Fd::Status::ADDED);
+			watcher->setStatus(IOFd::Status::ADDED);
 			controlFd(EPOLL_CTL_ADD, watcher);
 		}
 		else
@@ -56,7 +56,7 @@ namespace saf
 			if (watcher->isNoneEvent())
 			{
 				controlFd(EPOLL_CTL_DEL, watcher);
-				watcher->setStatus(Fd::Status::DELETED);
+				watcher->setStatus(IOFd::Status::DELETED);
 			}
 			else
 			{
@@ -65,31 +65,31 @@ namespace saf
 		}
 	}
 
-	void EPollPoller::removeWatcher(Fd *watcher)
+	void EPollPoller::removeWatcher(IOFd *watcher)
 	{
 		assert(hasWatcher(watcher));
 		assert(watcher->isNoneEvent());
-		assert(watcher->getStatus() == Fd::Status::ADDED
-			   || watcher->getStatus() == Fd::Status::DELETED);
+		assert(watcher->getStatus() == IOFd::Status::ADDED
+			   || watcher->getStatus() == IOFd::Status::DELETED);
 
 		_watchers.erase(watcher->getFd());
 
-		if (watcher->getStatus() == Fd::Status::ADDED)
+		if (watcher->getStatus() == IOFd::Status::ADDED)
 			controlFd(EPOLL_CTL_DEL, watcher);
 
-		watcher->setStatus(Fd::Status::NEW);
+		watcher->setStatus(IOFd::Status::NEW);
 	}
 
-	std::vector<Fd*> EPollPoller::poll(int timeoutMs)
+	std::vector<IOFd*> EPollPoller::poll(int timeoutMs)
 	{
-		std::vector<Fd*> watchers;
+		std::vector<IOFd*> watchers;
 
 		int numEvents = ::epoll_wait(_fd, &*_events.begin(), static_cast<int>(_events.size()), timeoutMs);
 		if (numEvents > 0)
 		{
 			for (int i = 0; i < numEvents; ++i)
 			{
-				Fd* watcher = static_cast<Fd*>(_events[i].data.ptr);
+				IOFd* watcher = static_cast<IOFd*>(_events[i].data.ptr);
 				watcher->setREvent(_events[i].events);
 				watchers.push_back(watcher);
 			}
@@ -103,7 +103,7 @@ namespace saf
 		return watchers;
 	}
 
-	void EPollPoller::controlFd(int operation, Fd *watcher)
+	void EPollPoller::controlFd(int operation, IOFd *watcher)
 	{
 		struct epoll_event event;
 		bzero(&event, sizeof event);

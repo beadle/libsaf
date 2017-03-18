@@ -5,12 +5,12 @@
 #ifndef LIBSAF_PIPE_H
 #define LIBSAF_PIPE_H
 
-#include "../Fd.h"
+#include "IOFd.h"
 
 
 namespace saf
 {
-	class Pipe : public Fd
+	class Pipe : public IOFd
 	{
 	public:
 		Pipe(EventLoop* loop, int fd);

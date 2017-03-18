@@ -5,12 +5,12 @@
 #ifndef LIBSAF_SOCKET_H
 #define LIBSAF_SOCKET_H
 
-#include "../Fd.h"
+#include "IOFd.h"
 
 
 namespace saf
 {
-	class Socket : public Fd
+	class Socket : public IOFd
 	{
 	public:
 		Socket(EventLoop* loop, int fd);

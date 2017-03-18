@@ -16,7 +16,7 @@
 
 namespace saf
 {
-	class Fd;
+	class IOFd;
 	class Poller;
 	class TimerQueue;
 
@@ -38,9 +38,9 @@ namespace saf
 		void cancelTimer(int fd);
 
 	public:  // exposed to fd objects(Socket, Timer...)
-		bool hasFd(Fd* fd);
-		void updateFd(Fd* fd);
-		void removeFd(Fd* fd);
+		bool hasFd(IOFd* fd);
+		void updateFd(IOFd* fd);
+		void removeFd(IOFd* fd);
 
 	protected:
 		bool isInLoopThread() { return _threadId == CurrentThread::tid(); }
@@ -61,9 +61,9 @@ namespace saf
 		std::atomic_bool _looping;
 		std::atomic_bool _handling;
 
-		Fd* _currentFd;
+		IOFd* _currentFd;
 
-		std::unique_ptr<Fd> _wakeupFd;
+		std::unique_ptr<IOFd> _wakeupFd;
 		std::unique_ptr<Poller> _poller;
 		std::unique_ptr<TimerQueue> _timerQueue;
 

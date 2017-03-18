@@ -9,7 +9,7 @@
 namespace saf
 {
 	Pipe::Pipe(EventLoop *loop, int fd)
-		: Fd(loop, fd)
+		: IOFd(loop, fd)
 	{
 
 	}
