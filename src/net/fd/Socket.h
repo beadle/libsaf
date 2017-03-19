@@ -13,6 +13,9 @@ namespace saf
 	class Socket : public IOFd
 	{
 	public:
+		static Socket* createNonBlocking();
+
+	public:
 		Socket(EventLoop* loop, int fd);
 
 	};

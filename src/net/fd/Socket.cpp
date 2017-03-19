@@ -8,6 +8,11 @@
 namespace saf
 {
 
+	Socket* Socket::createNonBlocking()
+	{
+
+	}
+
 	Socket::Socket(EventLoop *loop, int fd):
 		IOFd(loop, fd)
 	{

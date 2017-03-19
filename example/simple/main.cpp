@@ -8,6 +8,8 @@
 
 #include "core.h"
 
+using namespace std;
+
 void test_timer(saf::EventLoop* loop)
 {
 	for (int i=0; i<50; ++i)
@@ -56,9 +58,55 @@ void thread2_func(saf::EventLoop* loop)
 	test_timer(loop);
 }
 
+
+class A
+{
+public:
+	A() {
+		cout << __FUNCTION__ << "(" << __LINE__ << ")" << endl;
+	}
+	A(const A& other) {
+		cout << __FUNCTION__ << "(" << __LINE__ << ")" << endl;
+	}
+	A(A&& other) {
+		cout << __FUNCTION__ << "(" << __LINE__ << ")" << endl;
+	}
+
+	~A(){
+		cout << __FUNCTION__ << "(" << __LINE__ << ")" << endl;
+	}
+
+	void operator=(const A& other) {
+		cout << __FUNCTION__ << "(" << __LINE__ << ")" << endl;
+	}
+
+	void operator=(A&& other) {
+		cout << __FUNCTION__ << "(" << __LINE__ << ")" << endl;
+	}
+};
+
+
+void foo(std::function<void()>&& func)
+{
+	func();
+	return;
+}
+
+void bar(A&& a)
+{
+	return;
+}
+
+
 int main()
 {
 	INIT_LOGGER;
+
+	bar(A());
+
+	foo([](){
+		cout << "fuck you." << endl;
+	});
 
 //	for (int i=0; i<10; ++i)
 //		LOG_DEBUG("fuck you.");
@@ -66,13 +114,13 @@ int main()
 //	for (int i=0; i<10; ++i)
 //		LOG_WARN("fuck you.");
 
-	saf::EventLoop loop;
-	std::thread thread1(thread1_func, &loop);
-	std::thread thread2(thread2_func, &loop);
+//	saf::EventLoop loop;
+//	std::thread thread1(thread1_func, &loop);
+//	std::thread thread2(thread2_func, &loop);
 
 //	test_timer(loop);
 
-	loop.run();
+//	loop.run();
 
 	return 0;
 }
