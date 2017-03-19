@@ -30,7 +30,7 @@ namespace
 namespace saf
 {
 
-	const int kPollTimeMs = 33;
+	const int kPollTimeMs = 1000;
 
 	EventLoop::EventLoop() :
 		_threadId(CurrentThread::tid()),

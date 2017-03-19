@@ -42,10 +42,10 @@ namespace saf
 		void updateFd(IOFd* fd);
 		void removeFd(IOFd* fd);
 
-	protected:
 		bool isInLoopThread() { return _threadId == CurrentThread::tid(); }
 		void assertInLoopThread() { assert(isInLoopThread()); }
 
+	protected:
 		void wakeup();
 		void handleWakeupRead();
 
