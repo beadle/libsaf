@@ -2,6 +2,9 @@
 // Created by beadle on 3/19/17.
 //
 
+#include <unistd.h>
+#include <iostream>
+
 #include "TcpConnection.h"
 #include "base/Logging.h"
 #include "net/fd/Socket.h"
@@ -24,7 +27,7 @@ namespace saf
 
 	void TcpConnection::handleRead()
 	{
-		LOG_INFO("TcpConnection::handleRead")
+
 	}
 
 	void TcpConnection::handleWrite()
@@ -39,6 +42,6 @@ namespace saf
 
 	void TcpConnection::handleClose()
 	{
-		LOG_INFO("TcpConnection::handleRead");
+		
 	}
 }
