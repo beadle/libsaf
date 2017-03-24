@@ -26,7 +26,7 @@ namespace saf
 	IOFd::~IOFd()
 	{
 		assert(!_handling);
-		assert(_status == Status::ADDED);
+		assert(_status != Status::ADDED);
 	}
 
 	void IOFd::enableRead()
@@ -67,7 +67,7 @@ namespace saf
 
 	void IOFd::disableAll()
 	{
-		if (!_events)
+		if (_events)
 		{
 			_events = 0;
 			update();

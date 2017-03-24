@@ -24,35 +24,35 @@ namespace saf
 		::close(_fd);
 	}
 
-	bool EPollPoller::hasWatcher(IOFd *watcher)
+	bool EPollPoller::hasFd(IOFd *watcher)
 	{
-		auto it = _watchers.find(watcher->getFd());
-		return it != _watchers.end() && it->second == watcher;
+		auto it = _fds.find(watcher->getFd());
+		return it != _fds.end() && it->second == watcher;
 	}
 
-	void EPollPoller::updateWatcher(IOFd *watcher)
+	void EPollPoller::updateFd(IOFd *watcher)
 	{
 		auto status = watcher->getStatus();
 		auto fd = watcher->getFd();
 
 		if (status == IOFd::Status::NEW)
 		{
-			assert(_watchers.find(fd) == _watchers.end());
+			assert(_fds.find(fd) == _fds.end());
 
 			watcher->setStatus(IOFd::Status::ADDED);
-			_watchers[fd] = watcher;
+			_fds[fd] = watcher;
 			controlFd(EPOLL_CTL_ADD, watcher);
 		}
 		else if(status == IOFd::Status::DELETED)
 		{
-			assert(hasWatcher(watcher));
+			assert(hasFd(watcher));
 
 			watcher->setStatus(IOFd::Status::ADDED);
 			controlFd(EPOLL_CTL_ADD, watcher);
 		}
 		else
 		{
-			assert(hasWatcher(watcher));
+			assert(hasFd(watcher));
 
 			if (watcher->isNoneEvent())
 			{
@@ -66,14 +66,16 @@ namespace saf
 		}
 	}
 
-	void EPollPoller::removeWatcher(IOFd *watcher)
+	void EPollPoller::removeFd(IOFd *watcher)
 	{
-		assert(hasWatcher(watcher));
+		if (!hasFd(watcher))
+			return;
+
 		assert(watcher->isNoneEvent());
 		assert(watcher->getStatus() == IOFd::Status::ADDED
 			   || watcher->getStatus() == IOFd::Status::DELETED);
 
-		_watchers.erase(watcher->getFd());
+		_fds.erase(watcher->getFd());
 
 		if (watcher->getStatus() == IOFd::Status::ADDED)
 			controlFd(EPOLL_CTL_DEL, watcher);

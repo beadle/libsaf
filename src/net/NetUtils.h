@@ -12,7 +12,6 @@
 
 namespace saf
 {
-
 	namespace net
 	{
 		inline uint64_t hostToNetwork64(uint64_t host64)
@@ -44,8 +43,6 @@ namespace saf
 		{
 			return be16toh(net16);
 		}
-
-		void fromIpPort(const char* ip, uint16_t port, struct sockaddr_in* addr);
 
 	}
 

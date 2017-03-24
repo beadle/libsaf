@@ -19,14 +19,11 @@ namespace saf
 		typedef std::function<void()> EventCallback;
 		enum class Status { NEW, ADDED, DELETED, };
 
-		static const int kReadEvent;
-		static const int kWriteEvent;
-
 	public:
-		void setReadCallback(EventCallback&& cb) { _readCallback = std::move(cb); }
-		void setWriteCallback(EventCallback&& cb) { _writeCallback = std::move(cb); }
-		void setCloseCallback(EventCallback&& cb) { _closeCallback = std::move(cb); }
-		void setErrorCallback(EventCallback&& cb) { _errorCallback = std::move(cb); }
+		void setReadCallback(const EventCallback& cb) { _readCallback = std::move(cb); }
+		void setWriteCallback(const EventCallback& cb) { _writeCallback = std::move(cb); }
+		void setCloseCallback(const EventCallback& cb) { _closeCallback = std::move(cb); }
+		void setErrorCallback(const EventCallback& cb) { _errorCallback = std::move(cb); }
 
 		void enableRead();
 		void disableRead();
@@ -34,17 +31,16 @@ namespace saf
 		void disableWrite();
 		void disableAll();
 
-		void handleEvent();
-
 		bool isReading() const { return bool(_events & kReadEvent); }
 		bool isWriting() const { return bool(_events & kWriteEvent); }
 		bool isNoneEvent() const { return !_events; }
 
+		void handleEvent();
 		int getEvents() const { return _events; }
 
 	public:  // exposed to Poller only
 		IOFd(EventLoop *looper, int fd);
-		~IOFd();
+		virtual ~IOFd();
 
 		Status getStatus() const { return _status; }
 		EventLoop* getLooper() const { return _looper; }
@@ -52,6 +48,9 @@ namespace saf
 		void setREvent(int event) { _revents = event; }
 
 	protected:
+		static const int kReadEvent;
+		static const int kWriteEvent;
+
 		void update();
 
 	private:

@@ -10,8 +10,9 @@
 #include <vector>
 #include <mutex>
 #include <condition_variable>
+#include <thread>
+#include <atomic>
 
-#include "Thread.h"
 #include "FileUtils.h"
 
 
@@ -86,13 +87,13 @@ namespace saf
 		typedef std::shared_ptr<Buffer>	BufferPtr;
 		typedef std::vector<BufferPtr> BufferVector;
 
-		bool _running;
 		long _interval;
 		std::mutex _mutex;
 		std::condition_variable _cond;
+		std::atomic_bool _running;
 
 		LogFile _file;
-		Thread _thread;
+		std::unique_ptr<std::thread> _thread;
 
 		BufferPtr _currBuffer;
 		BufferVector _buffers;

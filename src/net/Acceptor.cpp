@@ -8,14 +8,16 @@
 #include "Acceptor.h"
 #include "fd/Socket.h"
 #include "EventLoop.h"
+#include "base/Logging.h"
 
 
 namespace saf
 {
-	Acceptor::Acceptor(EventLoop *loop, const InetAddress &addr, bool reusePort):
+	Acceptor::Acceptor(EventLoop *loop, const InetAddress &addr, NetProtocal protocal, bool reusePort):
 		_listening(false),
 		_loop(loop),
-		_socket(Socket::create(loop, addr.getFamily())),
+		_addr(addr),
+		_socket(Socket::create(loop, protocal, addr.getFamily())),
 		_idleFd(::open("/dev/null", O_RDONLY | O_CLOEXEC))
 	{
 		_socket->setReuseAddr(true);
@@ -28,6 +30,7 @@ namespace saf
 	{
 		_socket->disableAll();
 		_loop->removeFd(_socket.get());
+		::close(_idleFd);
 	}
 
 	void Acceptor::listen()
@@ -52,6 +55,7 @@ namespace saf
 		}
 		else
 		{
+			LOG_ERROR("Acceptor::handleRead")
 			// Read the section named "The special problem of
 			// accept()ing when you can't" in libev's doc.
 			// By Marc Lehmann, author of libev.

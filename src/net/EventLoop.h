@@ -29,29 +29,28 @@ namespace saf
 		EventLoop();
 		~EventLoop();
 
-		void run();
-		void quit();
+		void start();
+		void stop();
 
 		void runInLoop(Functor&& functor);
+		void queueInLoop(Functor&& functor);
 
-		int addTimer(float delay, Functor&& callback, bool repeated=false);
+		int addTimer(float delay, const Functor& callback, bool repeated=false);
 		void cancelTimer(int fd);
 
 	public:  // exposed to fd objects(Socket, Timer...)
-		bool hasFd(IOFd* fd);
 		void updateFd(IOFd* fd);
 		void removeFd(IOFd* fd);
 
 		bool isInLoopThread() { return _threadId == CurrentThread::tid(); }
-		void assertInLoopThread() { assert(isInLoopThread()); }
+		void assertInLoopThread() { if (!isInLoopThread()) abortNotInLoopThread(); }
 
 	protected:
 		void wakeup();
 		void handleWakeupRead();
+		void abortNotInLoopThread();
 
 		void runFunctors();
-		void queueInLoop(Functor&& functor);
-
 		void runTimers();
 
 	private:

@@ -8,6 +8,9 @@
 #include <memory>
 #include <functional>
 
+#include "InetAddress.h"
+#include "Types.h"
+
 
 namespace saf
 {
@@ -21,11 +24,18 @@ namespace saf
 		typedef std::function<void(int, const InetAddress&)> AcceptCallback;
 
 	public:
-		Acceptor(EventLoop *loop, const InetAddress &addr, bool reusePort=false);
+		Acceptor(EventLoop *loop,
+				 const InetAddress &addr,
+				 NetProtocal protocal=NetProtocal::TCP,
+				 bool reusePort=false);
 		~Acceptor();
 
 		void listen();
-		void setAcceptCallback(AcceptCallback&& callback) { _callback = std::move(callback); }
+
+		void setAcceptCallback(const AcceptCallback& callback)
+		{ _callback = std::move(callback); }
+
+		const InetAddress& getAddress() const { return _addr; }
 
 	protected:
 		void handleRead();
@@ -36,6 +46,7 @@ namespace saf
 		EventLoop* _loop;
 		std::unique_ptr<Socket> _socket;
 		AcceptCallback _callback;
+		InetAddress _addr;
 	};
 }
 

@@ -22,9 +22,9 @@ namespace saf
 
 		virtual std::vector<IOFd*> poll(int timeoutMs) = 0;
 
-		virtual bool hasWatcher(IOFd* watcher) = 0;
-		virtual void updateWatcher(IOFd* watcher) = 0;
-		virtual void removeWatcher(IOFd* watcher) = 0;
+		virtual bool hasFd(IOFd *watcher) = 0;
+		virtual void updateFd(IOFd *watcher) = 0;
+		virtual void removeFd(IOFd *watcher) = 0;
 	};
 
 }

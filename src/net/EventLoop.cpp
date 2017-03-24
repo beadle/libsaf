@@ -10,6 +10,7 @@
 #include "Poller.h"
 #include "EventLoop.h"
 #include "TimerQueue.h"
+#include "base/Logging.h"
 
 
 namespace
@@ -19,18 +20,18 @@ namespace
 		int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
 		if (evtfd < 0)
 		{
+			LOG_ERROR("createEventfd")
 			abort();
 		}
 		return evtfd;
 	}
-
 }
 
 
 namespace saf
 {
-
-	const int kPollTimeMs = 1000;
+	__thread EventLoop* t_looperInThread = nullptr;
+	const int kPollTimeMs = 33;
 
 	EventLoop::EventLoop() :
 		_threadId(CurrentThread::tid()),
@@ -42,22 +43,42 @@ namespace saf
 		_poller(Poller::createPoller()),
 		_timerQueue(new TimerQueue(this))
 	{
+		LOG_DEBUG("EventLoop(%p) created in this thread(%d)", this, _threadId);
+		if (t_looperInThread)
+		{
+			LOG_FATAL("Another EventLoop(%p) exists in this thread(%d)", this, _threadId);
+		}
+		else
+		{
+			t_looperInThread = this;
+		}
+
 		_wakeupFd->enableRead();
 		_wakeupFd->setReadCallback(std::bind(&EventLoop::handleWakeupRead, this));
 	}
 
 	EventLoop::~EventLoop()
 	{
+		assertInLoopThread();
+		LOG_DEBUG("EventLoop(%p) of thread(%d) destructs", this, _threadId);
+
 		_wakeupFd->disableAll();
 		removeFd(_wakeupFd.get());
 		::close(_wakeupFd->getFd());
+
+		runFunctors();
+		runTimers();
 	}
 
-	void EventLoop::run()
+	void EventLoop::start()
 	{
 		assert(!_looping);
+		assert(!_quit);
+
 		_quit = false;
 		_looping = true;
+
+		LOG_DEBUG("EventLoop(%p) of thread(%d) connect looping", this, _threadId);
 
 		while (!_quit)
 		{
@@ -77,9 +98,11 @@ namespace saf
 		}
 
 		_looping = false;
+		LOG_DEBUG("EventLoop(%p) of thread(%d) disconnect looping", this, _threadId);
+
 	}
 
-	void EventLoop::quit()
+	void EventLoop::stop()
 	{
 		_quit = true;
 	}
@@ -96,14 +119,20 @@ namespace saf
 		}
 	}
 
-	int EventLoop::addTimer(float delay, Functor &&callback, bool repeated)
+	int EventLoop::addTimer(float delay, const Functor& callback, bool repeated)
 	{
-		return _timerQueue->addTimer(delay, std::move(callback), repeated);
+		auto timer = _timerQueue->createTimer(delay, callback, repeated);
+		runInLoop([this, timer](){
+			_timerQueue->addTimer(timer);
+		});
+		return timer->getFd();
 	}
 
 	void EventLoop::cancelTimer(int fd)
 	{
-		_timerQueue->cancelTimer(fd);
+		runInLoop([this, fd](){
+			_timerQueue->cancelTimer(fd);
+		});
 	}
 
 	void EventLoop::queueInLoop(Functor &&functor)
@@ -112,41 +141,44 @@ namespace saf
 		_functors.push_back(functor);
 	}
 
-	bool EventLoop::hasFd(IOFd *fd)
-	{
-		assert(fd->getLooper() == this);
-		assertInLoopThread();
-		return _poller->hasWatcher(fd);
-	}
-
 	void EventLoop::updateFd(IOFd *fd)
 	{
 		assert(fd->getLooper() == this);
 		assertInLoopThread();
-		_poller->updateWatcher(fd);
+		_poller->updateFd(fd);
 	}
 
 	void EventLoop::removeFd(IOFd *fd)
 	{
 		assert(fd->getLooper() == this);
 		assertInLoopThread();
-		_poller->removeWatcher(fd);
+		_poller->removeFd(fd);
 	}
 
 	void EventLoop::handleWakeupRead()
 	{
 		uint64_t one = 1;
 		ssize_t n = ::read(_wakeupFd->getFd(), &one, sizeof one);
-		assert(n == 8);
-
-		std::cout << "[EventLoop::handleWakeupRead] one: " << one << std::endl;
+		if (n != 8)
+		{
+			LOG_ERROR("EventLoop::wakeup() reads %d bytes instead of 8", n);
+		}
 	}
 
 	void EventLoop::wakeup()
 	{
 		uint64_t one = 1;
 		ssize_t n = ::write(_wakeupFd->getFd(), &one, sizeof one);
-		assert(n == 8);
+		if (n != 8)
+		{
+			LOG_ERROR("EventLoop::wakeup() writes %d bytes instead of 8", n);
+		}
+	}
+
+	void EventLoop::abortNotInLoopThread()
+	{
+		LOG_FATAL("EventLoop::abortNotInLoopThread - EventLoop(%p) of thread(%d) tid of CurrentThread(%d)",
+				  this, _threadId, CurrentThread::tid());
 	}
 
 	void EventLoop::runFunctors()

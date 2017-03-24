@@ -6,17 +6,21 @@
 #include <netinet/tcp.h>
 
 #include "Socket.h"
-#include "../EventLoop.h"
+#include "net/EventLoop.h"
+#include "base/Logging.h"
 
 namespace saf
 {
 
-	Socket* Socket::create(EventLoop* loop, sa_family_t family)
+	Socket* Socket::create(EventLoop* loop, NetProtocal protocal, sa_family_t family)
 	{
-		int sockfd = ::socket(family, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_TCP);
+		auto flags = SOCK_NONBLOCK | SOCK_CLOEXEC;
+		flags |= (protocal == NetProtocal::TCP ? SOCK_STREAM : SOCK_DGRAM);
+
+		int sockfd = ::socket(family, flags, IPPROTO_TCP);
 		if (sockfd < 0)
 		{
-			// TODO: log error
+			LOG_FATAL("Socket::create");
 		}
 		return new Socket(loop, sockfd);
 	}
@@ -37,7 +41,7 @@ namespace saf
 		int ret = ::bind(getFd(), localAddr.getSockAddr(), static_cast<socklen_t>(sizeof(struct sockaddr_in6)));
 		if (ret < 0)
 		{
-			// TODO: log error
+			LOG_FATAL("Socket::bind")
 		}
 	}
 
@@ -46,7 +50,7 @@ namespace saf
 		int ret = ::listen(getFd(), SOMAXCONN);
 		if (ret < 0)
 		{
-			// TODO: log error
+			LOG_FATAL("Socket::listen")
 		}
 	}
 
@@ -57,9 +61,39 @@ namespace saf
 		int connfd = ::accept4(getFd(), (sockaddr*)addr, &addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
 		if (connfd < 0)
 		{
-			// todo: log error
+			LOG_FATAL("Socket::accept")
 		}
 		return connfd;
+	}
+
+	int Socket::connect(const InetAddress& serverAddr)
+	{
+		int ret = ::connect(getFd(), serverAddr.getSockAddr(), static_cast<socklen_t>(sizeof(struct sockaddr_in)));
+		return ret;
+	}
+
+	void Socket::shutdown()
+	{
+		int ret = ::shutdown(getFd(), SHUT_WR);
+		if (ret < 0)
+		{
+			LOG_FATAL("Socket::shutdown")
+		}
+	}
+
+	int Socket::getSocketError()
+	{
+		int optval;
+		socklen_t optlen = static_cast<socklen_t>(sizeof optval);
+
+		if (::getsockopt(getFd(), SOL_SOCKET, SO_ERROR, &optval, &optlen) < 0)
+		{
+			return errno;
+		}
+		else
+		{
+			return optval;
+		}
 	}
 
 	void Socket::setKeepAlive(bool on)
@@ -86,8 +120,12 @@ namespace saf
 	void Socket::setReusePort(bool on)
 	{
 		int optval = on ? 1 : 0;
-		::setsockopt(getFd(), SOL_SOCKET, SO_REUSEPORT,
+		int ret = ::setsockopt(getFd(), SOL_SOCKET, SO_REUSEPORT,
 					 &optval, static_cast<socklen_t>(sizeof optval));
+		if (ret < 0 && on)
+		{
+			LOG_ERROR("SO_REUSEPORT is not supported.");
+		}
 	}
 
 }

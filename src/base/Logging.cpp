@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iostream>
 #include <chrono>
+#include <stdarg.h>
 
 #include "Logging.h"
 #include "AsyncLogger.h"
@@ -20,15 +21,16 @@ namespace saf
 	{
 		const char* LogLevelName[int(LogLevel::COUNT)] =
 		{
-			"DEBUG ",
-			"INFO  ",
-			"WARN  ",
-			"ERROR ",
-			"FATAL ",
+			"DEBUG -",
+			"INFO -",
+			"WARN -",
+			"ERROR -",
+			"FATAL -",
 		};
 
 		const size_t kMaxNumericSize = 32;
 		const char digits[] = "0123456789";
+		__thread char errorBuffer[512];
 
 		// Efficient Integer to String Conversions, by Matthew Wilson.
 		template<typename T>
@@ -92,22 +94,52 @@ namespace saf
 
 	}
 
-	void log(LogLevel level, const char* file, int line, const char* function, const char* content)
+	void log(LogLevel level, const char* file, int line, const char* function, int error, const char* format, ...)
 	{
 		static __thread FixedBuffer<128*1024> buffer;
+		static __thread char content[1024] = "";
 		buffer.reset();
-		appendString(buffer, LogLevelName[int(level)], 6);
+
+		appendString(buffer, LogLevelName[int(level)]);
+
+		if (error != 0)
+		{
+			appendString(buffer, " ", 1);
+			appendString(buffer, errnoToString(error));
+			appendString(buffer, "errno(", 6);
+			appendInteger(buffer, error);
+			appendString(buffer, ") -", 3);
+		}
+
+		appendTime(buffer);
+		appendString(buffer, "- ", 2);
 		appendString(buffer, file);
 		appendString(buffer, "(", 1);
 		appendInteger(buffer, line);
-		appendString(buffer, ") -", 3);
-		appendTime(buffer);
-		appendString(buffer, "- ", 2);
-		appendString(buffer, function);
+		appendString(buffer, ")", 1);
+		if (function)
+		{
+			appendString(buffer, " - ", 3);
+			appendString(buffer, function);
+		}
 		appendString(buffer, ": ", 2);
+
+		va_list args;
+		va_start(args, format);
+		vsprintf(content, format, args);
+		va_end(args);
 		appendString(buffer, content);
+
 		appendString(buffer, "\n", 1);
 		gLogger.append(buffer.data(), buffer.length());
+
+		if (level >= LogLevel::FATAL)
+			::abort();
+	}
+
+	const char* errnoToString(int error)
+	{
+		return strerror_r(error, errorBuffer, sizeof errorBuffer);
 	}
 
 	LoggerLauncher::LoggerLauncher()

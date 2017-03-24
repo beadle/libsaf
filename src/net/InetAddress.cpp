@@ -4,11 +4,16 @@
 
 #include "InetAddress.h"
 #include "NetUtils.h"
+#include "base/Logging.h"
 #include <string.h>
 #include <arpa/inet.h>
 
 namespace saf
 {
+	InetAddress::InetAddress()
+	{
+		bzero(&_addr, sizeof _addr);
+	}
 
 	InetAddress::InetAddress(uint16_t port)
 	{
@@ -22,7 +27,12 @@ namespace saf
 	InetAddress::InetAddress(const std::string &ip, uint16_t port)
 	{
 		bzero(&_addr, sizeof _addr);
-		net::fromIpPort(ip.c_str(), port, &_addr);
+		_addr.sin_family = AF_INET;
+		_addr.sin_port = net::hostToNetwork16(port);
+		if (::inet_pton(AF_INET, ip.c_str(), &_addr.sin_addr) <= 0)
+		{
+			LOG_ERROR("InetAddress::InetAddress(const std::string &ip, uint16_t port)")
+		}
 	}
 
 	InetAddress::InetAddress(const sockaddr_in &addr) :

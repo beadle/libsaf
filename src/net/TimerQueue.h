@@ -24,7 +24,8 @@ namespace saf
 
 		TimerQueue(EventLoop* loop);
 
-		int addTimer(float delay, TimerCallback&& callback, bool repeated=false);
+		Timer* createTimer(float delay, const TimerCallback& callback, bool repeated=false);
+		void addTimer(Timer* timer);
 		void cancelTimer(int fd);
 
 		bool checkTimers() const;

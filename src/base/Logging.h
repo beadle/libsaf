@@ -6,6 +6,7 @@
 #define EXAMPLE_LOGGING_H
 
 #include <string.h>
+#include <errno.h>
 
 
 namespace saf
@@ -20,7 +21,10 @@ namespace saf
 		COUNT,
 	};
 
-	extern void log(LogLevel level, const char* file, int line, const char* function, const char* content);
+	extern void log(LogLevel level, const char* file, int line,
+			const char* function, int error, const char* format, ...);
+
+	extern const char* errnoToString(int error);
 
 	class LoggerLauncher
 	{
@@ -32,11 +36,11 @@ namespace saf
 
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
-#define LOG_DEBUG(__CONTENT__) 	saf::log(saf::LogLevel::DEBUG, __FILENAME__, __LINE__, __FUNCTION__, __CONTENT__);
-#define LOG_INFO(__CONTENT__) 	saf::log(saf::LogLevel::INFO, __FILENAME__, __LINE__, __FUNCTION__, __CONTENT__);
-#define LOG_WARN(__CONTENT__) 	saf::log(saf::LogLevel::WARN, __FILENAME__, __LINE__, __FUNCTION__, __CONTENT__);
-#define LOG_ERROR(__CONTENT__) 	saf::log(saf::LogLevel::ERROR, __FILENAME__, __LINE__, __FUNCTION__, __CONTENT__);
-#define LOG_FATAL(__CONTENT__) 	saf::log(saf::LogLevel::FATAL, __FILENAME__, __LINE__, __FUNCTION__, __CONTENT__);
+#define LOG_DEBUG(__CONTENT__, ARGS...) saf::log(saf::LogLevel::DEBUG, __FILENAME__, __LINE__, __FUNCTION__, 0, __CONTENT__, ##ARGS);
+#define LOG_INFO(__CONTENT__, ARGS...) saf::log(saf::LogLevel::INFO, __FILENAME__, __LINE__, nullptr, 0, __CONTENT__, ##ARGS);
+#define LOG_WARN(__CONTENT__, ARGS...) saf::log(saf::LogLevel::WARN, __FILENAME__, __LINE__, nullptr, 0, __CONTENT__, ##ARGS);
+#define LOG_ERROR(__CONTENT__, ARGS...) saf::log(saf::LogLevel::ERROR, __FILENAME__, __LINE__, nullptr, errno, __CONTENT__, ##ARGS);
+#define LOG_FATAL(__CONTENT__, ARGS...) saf::log(saf::LogLevel::FATAL, __FILENAME__, __LINE__, nullptr, errno, __CONTENT__, ##ARGS);
 
 #define INIT_LOGGER saf::LoggerLauncher __launch__;
 

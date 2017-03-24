@@ -40,13 +40,14 @@ namespace saf
 		_running(false),
 		_file(path),
 		_interval(long(flushInterval * 1000)),
-		_thread(std::bind(&AsyncLogger::threadFunc, this), "Logger")
+		_thread(nullptr)
 	{
 		_currBuffer.reset(new Buffer);
 	}
 
 	AsyncLogger::~AsyncLogger()
 	{
+		stop();
 	}
 
 	void AsyncLogger::append(const char* line, size_t len)
@@ -67,7 +68,7 @@ namespace saf
 		BufferVector writeBuffers;
 		BufferPtr emptyBuffer(new Buffer);
 
-		while (this->_running)
+		while (_running)
 		{
 			assert(writeBuffers.empty());
 			{
@@ -99,14 +100,20 @@ namespace saf
 
 	void AsyncLogger::start()
 	{
+		assert(!_running);
+
 		_running = true;
-		_thread.start();
+		_thread.reset(new std::thread(std::bind(&AsyncLogger::threadFunc, this)));
 	}
 
 	void AsyncLogger::stop()
 	{
+		if (!_running)
+			return;
+
 		_running = false;
-		_thread.join();
+		_thread->join();
+		_thread.reset();
 	}
 
 }

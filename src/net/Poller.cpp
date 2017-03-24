@@ -11,6 +11,6 @@ namespace saf
 {
 	Poller* Poller::createPoller()
 	{
-		return new EPollPoller();
+		return new EPollPoller;
 	}
 }

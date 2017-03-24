@@ -5,6 +5,7 @@
 #include <thread>
 #include <unistd.h>
 #include <iostream>
+#include <memory>
 
 #include "core.h"
 
@@ -59,22 +60,54 @@ void thread2_func(saf::EventLoop* loop)
 }
 
 
+class A
+{
+public:
+	A() {
+		std::cout << this << __FUNCTION__ << "(" << __LINE__ << ")" << std::endl;
+	}
+	A(const A& other) {
+		std::cout << this << __FUNCTION__ << "(" << __LINE__ << ")" << std::endl;
+	}
+	A(A&& other) {
+		std::cout << this << __FUNCTION__ << "(" << __LINE__ << ")" << std::endl;
+	}
+	void operator=(const A& other) {
+		std::cout << this << __FUNCTION__ << "(" << __LINE__ << ")" << std::endl;
+	}
+	void operator=(A&& other) {
+		std::cout << this << __FUNCTION__ << "(" << __LINE__ << ")" << std::endl;
+	}
+	~A() {
+		std::cout << this << __FUNCTION__ << "(" << __LINE__ << ")" << std::endl;
+	}
+};
+
+void func(A&& a) {
+	A store;
+	store = a;
+	std::cout << "in function:" << &a << std::endl;
+}
+
+
 int main()
 {
 	INIT_LOGGER;
 
-//	for (int i=0; i<10; ++i)
-//		LOG_DEBUG("fuck you.");
-//	::sleep(2);
-//	for (int i=0; i<10; ++i)
-//		LOG_WARN("fuck you.");
+//	saf::Server server(
+//		saf::InetAddress(5000),
+//		saf::NetProtocal::TCP
+//	);
+////	server.getLoop()->addTimer(8.0, [&server](){
+////		server.stop();
+////	});
+//	server.start(4);
 
-	saf::EventLoop loop;
-
-	saf::TcpServer server(&loop, saf::InetAddress("127.0.0.1", 5000));
-	server.start();
-
-	loop.run();
+	saf::Client client(saf::InetAddress("127.0.0.1", 5000), saf::NetProtocal::TCP, 3.0f);
+//	client.getLoop()->addTimer(8.0, [&client](){
+//		client.disconnect();
+//	});
+	client.connect();
 
 	return 0;
 }

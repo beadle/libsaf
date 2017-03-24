@@ -14,6 +14,7 @@ namespace saf
 	class InetAddress
 	{
 	public:
+		InetAddress();
 		explicit InetAddress(uint16_t port);
 		explicit InetAddress(const sockaddr_in& addr);
 

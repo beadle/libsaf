@@ -8,7 +8,7 @@
 
 namespace saf
 {
-	Timer::Timer(int fd, long interval, TimerCallback&& callback) :
+	Timer::Timer(int fd, long interval, const TimerCallback& callback) :
 		Fd(fd),
 		_repeated(false),
 		_interval(interval),

@@ -17,30 +17,32 @@ namespace saf
 
 	class EPollPoller : public Poller
 	{
-	public:
+	protected:
 		EPollPoller();
 		~EPollPoller();
 
 		std::vector<IOFd*> poll(int timeoutMs);
 
-	public: // exposed to IOFd only
-		bool hasWatcher(IOFd* watcher) override;
-		void updateWatcher(IOFd* watcher) override;
-		void removeWatcher(IOFd* watcher) override;
+		void updateFd(IOFd *watcher) override;
+		void removeFd(IOFd *watcher) override;
+
+		friend class Poller;
+		friend class EventLoop;
 
 	protected:
 		static const int kInitEventListSize = 16;
 
+		bool hasFd(IOFd *watcher) override;
 		void controlFd(int operation, IOFd *watcher);
 
 	private:
 		int _fd;
 
 		typedef std::vector<struct epoll_event> EventList;
-		typedef std::unordered_map<int, IOFd*> WatcherMap;
+		typedef std::unordered_map<int, IOFd*> FdMap;
 
 		EventList _events;
-		WatcherMap _watchers;  // for querying watcher by getFd only, doesn't own any watcher
+		FdMap _fds;  // for querying watcher by getFd only, doesn't own any watcher
 	};
 
 }

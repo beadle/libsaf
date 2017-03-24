@@ -20,29 +20,28 @@ namespace saf
 	{
 	}
 
-	int TimerQueue::addTimer(float delay, TimerCallback &&callback, bool repeated)
+	Timer* TimerQueue::createTimer(float delay, const TimerCallback &callback, bool repeated)
 	{
-		Timer* ptr = new Timer(--_counter, (long)(delay * 1000), std::move(callback));
-		_loop->runInLoop([=](){
-			TimerPtr timer(ptr);
-			timer->setRepeated(repeated);
-			_timers[timer->getFd()] = std::move(timer);
-			heapInsert(ptr);
-		});
-		return ptr->getFd();
+		Timer* ptr(new Timer(--_counter, (long)(delay * 1000), callback));
+		ptr->setRepeated(repeated);
+		return ptr;
+	}
+
+	void TimerQueue::addTimer(Timer* timer)
+	{
+		heapInsert(timer);
+		_timers[timer->getFd()].reset(timer);
 	}
 
 	void TimerQueue::cancelTimer(int fd)
 	{
-		_loop->runInLoop([=](){
-			auto it = _timers.find(fd);
-			if (it != _timers.end())
-			{
-				int pos = it->second->getHeapIndex();
-				heapDelete(pos);
-				_timers.erase(fd);
-			}
-		});
+		auto it = _timers.find(fd);
+		if (it != _timers.end())
+		{
+			int pos = it->second->getHeapIndex();
+			heapDelete(pos);
+			_timers.erase(fd);
+		}
 	}
 
 	bool TimerQueue::checkTimers() const
