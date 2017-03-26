@@ -17,23 +17,25 @@ namespace saf
 	class Socket;
 	class EventLoop;
 
-	class Connector : public std::enable_shared_from_this<Connector>
+	class TcpConnector : public std::enable_shared_from_this<TcpConnector>
 	{
 	protected:
 		typedef std::function<bool(std::unique_ptr<Socket>&)> ConnectedCallback;
 
 	public:
-		Connector(EventLoop* loop, float retrySeconds);
-		~Connector();
+		~TcpConnector();
 
 	protected:
-		void connect(const InetAddress &addr, NetProtocal protocal);
+		TcpConnector(EventLoop* loop, float retrySeconds);
+
+	protected:
+		void connect(const InetAddress &addr);
 		void disconnect();
 
 		void setConnectedCallback(const ConnectedCallback& callback)
 		{ _connectedCallback = callback; }
 
-		friend class Client;
+		friend class TcpClient;
 
 	private:
 		enum { kDisconnected, kConnecting, kConnected, };
@@ -54,7 +56,6 @@ namespace saf
 
 	private:
 		InetAddress _addr;
-		NetProtocal _protocal;
 		EventLoop* _loop;
 		std::atomic_bool _stopping;
 		float _retrySeconds;

@@ -14,16 +14,16 @@
 
 namespace saf
 {
-	class Connector;
+	class TcpConnector;
 	class EventLoop;
-	class Connection;
+	class TcpConnection;
 	class Socket;
 
-	class Client : public ConnectionObserver
+	class TcpClient : public ConnectionObserver
 	{
 	public:
-		Client(EventLoop* loop, const InetAddress& addr, NetProtocal protocal, float reconnectDelay);
-		~Client();
+		TcpClient(EventLoop* loop, const InetAddress& addr, float reconnectDelay);
+		~TcpClient();
 
 	public:  /// Thread-Safed Methods
 		void connect();
@@ -62,11 +62,10 @@ namespace saf
 		EventLoop* _loop;
 		std::atomic_bool _connecting;
 		InetAddress _addr;
-		NetProtocal _protocal;
 
 		float _reconnectDelay;
-		std::shared_ptr<Connector> _connector;
-		std::shared_ptr<Connection> _connection;
+		std::shared_ptr<TcpConnector> _connector;
+		std::shared_ptr<TcpConnection> _connection;
 
 		RecvMessageCallback _recvMessageCallback;
 		WriteCompleteCallback _writeCompleteCallback;

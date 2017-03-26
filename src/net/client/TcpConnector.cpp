@@ -4,20 +4,17 @@
 #include <assert.h>
 #include <unistd.h>
 
-#include "Connector.h"
+#include "TcpConnector.h"
 
 #include "base/Logging.h"
 #include "net/EventLoop.h"
 #include "net/fd/Socket.h"
-#include "net/Connection.h"
 #include "net/connection/TcpConnection.h"
-#include "net/connection/KcpConnection.h"
-#include "net/connection/UdpConnection.h"
 
 
 namespace saf
 {
-	Connector::Connector(EventLoop* loop, float retrySeconds) :
+	TcpConnector::TcpConnector(EventLoop* loop, float retrySeconds) :
 		_loop(loop),
 		_stopping(false),
 		_status(kDisconnected),
@@ -26,33 +23,32 @@ namespace saf
 
 	}
 
-	Connector::~Connector()
+	TcpConnector::~TcpConnector()
 	{
 
 	}
 
-	void Connector::connect(const InetAddress &addr, NetProtocal protocal)
+	void TcpConnector::connect(const InetAddress &addr)
 	{
 		_addr = addr;
-		_protocal = protocal;
 		_stopping = false;
-		_loop->runInLoop(std::bind(&Connector::connectInLoop, this));
+		_loop->runInLoop(std::bind(&TcpConnector::connectInLoop, this));
 	}
 
-	void Connector::disconnect()
+	void TcpConnector::disconnect()
 	{
 		_stopping = true;
-		_loop->runInLoop(std::bind(&Connector::disconnectInLoop, this));
+		_loop->runInLoop(std::bind(&TcpConnector::disconnectInLoop, this));
 	}
 
-	void Connector::connectInLoop()
+	void TcpConnector::connectInLoop()
 	{
 		_loop->assertInLoopThread();
 		if (_stopping) return;
 
 		resetSocket();
 
-		_socket.reset(Socket::create(_protocal, _addr.getFamily()));
+		_socket.reset(Socket::create(NetProtocal::TCP, _addr.getFamily()));
 		int ret = _socket->connect(_addr);
 		int savedErrno = (ret == 0) ? 0 : errno;
 		switch (savedErrno)
@@ -79,18 +75,18 @@ namespace saf
 			case EBADF:
 			case EFAULT:
 			case ENOTSOCK:
-				LOG_ERROR("connect error(%d) in Connector::connectInLoop", savedErrno);
+				LOG_ERROR("connect error(%d) in TcpConnector::connectInLoop", savedErrno);
 				_socket.reset();
 				break;
 
 			default:
-				LOG_ERROR("connect error(%d) in Connector::connectInLoop", savedErrno);
+				LOG_ERROR("connect error(%d) in TcpConnector::connectInLoop", savedErrno);
 				_socket.reset();
 				break;
 		}
 	}
 
-	void Connector::disconnectInLoop()
+	void TcpConnector::disconnectInLoop()
 	{
 		_loop->assertInLoopThread();
 
@@ -98,28 +94,28 @@ namespace saf
 		resetSocket();
 	}
 
-	void Connector::onConnectingInLoop()
+	void TcpConnector::onConnectingInLoop()
 	{
 		changeStatus(kConnecting);
 
-		_socket->setWriteCallback(std::bind(&Connector::handleWriteInLoop, this));
-		_socket->setErrorCallback(std::bind(&Connector::handleErrorInLoop, this));
+		_socket->setWriteCallback(std::bind(&TcpConnector::handleWriteInLoop, this));
+		_socket->setErrorCallback(std::bind(&TcpConnector::handleErrorInLoop, this));
 		_socket->setReadCallback(nullptr);
-		_socket->setCloseCallback(std::bind(&Connector::handleCloseInLoop, this));
+		_socket->setCloseCallback(std::bind(&TcpConnector::handleCloseInLoop, this));
 		_socket->attachInLoop(_loop);
 		_socket->enableWriteInLoop();
 	}
 
-	void Connector::onRetryInLoop()
+	void TcpConnector::onRetryInLoop()
 	{
 		changeStatus(kDisconnected);
 		resetSocket();
 
-		LOG_INFO("Connector::onRetryInLoop - Retry connecting to %s in %f seconds.", _addr.toIpPort().c_str(), _retrySeconds);
-		_loop->addTimer(_retrySeconds, std::bind(&Connector::connectInLoop, shared_from_this()));
+		LOG_INFO("TcpConnector::onRetryInLoop - Retry connecting to %s in %f seconds.", _addr.toIpPort().c_str(), _retrySeconds);
+		_loop->addTimer(_retrySeconds, std::bind(&TcpConnector::connectInLoop, shared_from_this()));
 	}
 
-	void Connector::handleWriteInLoop()
+	void TcpConnector::handleWriteInLoop()
 	{
 		if (_status == kConnecting)
 		{
@@ -127,7 +123,7 @@ namespace saf
 			int err = _socket->getSocketError();
 			if (err)
 			{
-				LOG_WARN("Connector::handleWriteInLoop - SO_ERROR(%d): %s", err, errnoToString(err));
+				LOG_WARN("TcpConnector::handleWriteInLoop - SO_ERROR(%d): %s", err, errnoToString(err));
 				onRetryInLoop();
 			}
 			else
@@ -140,18 +136,18 @@ namespace saf
 		}
 		else
 		{
-			LOG_WARN("Connector::handleWriteInLoop error status: %d", int(_status));
+			LOG_WARN("TcpConnector::handleWriteInLoop error status: %d", int(_status));
 			changeStatus(kDisconnected);
 		}
 	}
 
-	void Connector::handleErrorInLoop()
+	void TcpConnector::handleErrorInLoop()
 	{
-		LOG_ERROR("Connector::handleErrorInLoop error status: %d", int(_status));
+		LOG_ERROR("TcpConnector::handleErrorInLoop error status: %d", int(_status));
 		if (_status == kConnecting)
 		{
 			int err = _socket->getSocketError();
-			LOG_ERROR("Connector::handleErrorInLoop - SO_ERROR(%d): %s", err, errnoToString(err));
+			LOG_ERROR("TcpConnector::handleErrorInLoop - SO_ERROR(%d): %s", err, errnoToString(err));
 
 			_loop->queueInLoop([this](){
 				onRetryInLoop();
@@ -159,9 +155,9 @@ namespace saf
 		}
 	}
 
-	void Connector::handleCloseInLoop()
+	void TcpConnector::handleCloseInLoop()
 	{
-		LOG_INFO("Connector::handleCloseInLoop - status: %d", int(_status))
+		LOG_INFO("TcpConnector::handleCloseInLoop - status: %d", int(_status))
 		if (_status == kConnecting)
 		{
 			_loop->queueInLoop([this](){
@@ -170,7 +166,7 @@ namespace saf
 		}
 	}
 
-	void Connector::resetSocket()
+	void TcpConnector::resetSocket()
 	{
 		if (_socket)
 		{

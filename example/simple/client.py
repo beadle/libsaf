@@ -7,7 +7,7 @@ class TcpClient:
     BUFSIZ=1024
     ADDR=(HOST, PORT)
     def __init__(self):
-        self.client=socket(AF_INET, SOCK_STREAM)
+        self.client=socket(AF_INET, SOCK_DGRAM)
         self.client.connect(self.ADDR)
 
       	while True:

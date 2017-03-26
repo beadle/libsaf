@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <fcntl.h>
+#include <iostream>
 
 #include "Socket.h"
 #include "net/EventLoop.h"
@@ -14,25 +16,21 @@ namespace saf
 
 	Socket* Socket::create(NetProtocal protocal, sa_family_t family)
 	{
-		auto flags = SOCK_NONBLOCK | SOCK_CLOEXEC;
-		auto proto = 0;
-
-		switch (protocal)
-		{
-			case NetProtocal::TCP:
-				flags |= SOCK_STREAM;
-				proto = IPPROTO_TCP;
-				break;
-			default:
-				flags |= SOCK_DGRAM;
-				break;
-		}
-
-		int sockfd = ::socket(family, flags, proto);
+		int sockfd = ::socket(
+				family, protocal == NetProtocal::TCP ? SOCK_STREAM : SOCK_DGRAM, 0);
 		if (sockfd < 0)
 		{
 			LOG_FATAL("Socket::create");
 		}
+
+		int flags = fcntl(sockfd, F_GETFL);
+		flags |= SOCK_NONBLOCK;
+		::fcntl(sockfd, F_SETFL, flags);
+
+		flags = ::fcntl(sockfd, F_GETFD, 0);
+		flags |= FD_CLOEXEC;
+		::fcntl(sockfd, F_SETFD, flags);
+
 		return new Socket(sockfd);
 	}
 

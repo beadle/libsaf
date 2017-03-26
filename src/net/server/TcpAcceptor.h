@@ -19,17 +19,18 @@ namespace saf
 	class EventLoop;
 	class InetAddress;
 
-	class Acceptor
+	class TcpAcceptor
 	{
 	protected:
 		typedef std::function<void(int, const InetAddress&)> AcceptCallback;
 
 	public:
-		Acceptor(EventLoop *loop,
+		~TcpAcceptor();
+
+	protected:
+		TcpAcceptor(EventLoop *loop,
 				 const InetAddress &addr,
-				 NetProtocal protocal=NetProtocal::TCP,
 				 bool reusePort=false);
-		~Acceptor();
 
 	protected:
 		void setAcceptCallback(const AcceptCallback& callback)
@@ -40,7 +41,7 @@ namespace saf
 		void listenInLoop();
 		void stopInLoop();
 
-		friend class Server;
+		friend class TcpServer;
 
 	private:
 		void handleReadInLoop();
@@ -49,7 +50,6 @@ namespace saf
 		bool _reusePort;
 		bool _listening;
 		int _idleFd;
-		NetProtocal _protocal;
 		EventLoop* _loop;
 		std::unique_ptr<Socket> _socket;
 		AcceptCallback _callback;

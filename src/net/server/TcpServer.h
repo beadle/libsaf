@@ -17,13 +17,13 @@ namespace saf
 {
 	class EventLoop;
 	class EventLoopCluster;
-	class Acceptor;
+	class TcpAcceptor;
 
-	class Server : public ConnectionObserver
+	class TcpServer : public ConnectionObserver
 	{
 	public:
-		Server(EventLoop* loop, const InetAddress& addr, NetProtocal protocal);
-		~Server();
+		TcpServer(EventLoop* loop, const InetAddress& addr);
+		~TcpServer();
 
 	public:  /// Thread-Safed Methods
 		void start(size_t threadCount);
@@ -52,7 +52,7 @@ namespace saf
 	protected:  /// Looper Thread Methods
 		void newConnectionInLoop(int connfd, const InetAddress &addr);
 		void removeConnectionInLoop(const ConnectionPtr &conn);
-		ConnectionPtr createConnectionInLoop(int connfd);
+		ConnectionPtr createConnectionInLoop(int connfd, const InetAddress& addr);
 
 	protected:  /// Connection Thread Methods
 		void onReceivedMessageInConnection(const ConnectionPtr&, Buffer*);
@@ -61,13 +61,12 @@ namespace saf
 		void onClosedInConnection(const ConnectionPtr&);
 
 	private:
-		typedef std::unordered_map<int, std::shared_ptr<Connection> > ConnectionMap;
+		typedef std::unordered_map<int, std::shared_ptr<TcpConnection> > ConnectionMap;
 
 		bool _running;
-		NetProtocal _protocal;
 		EventLoop* _loop;
 
-		std::unique_ptr<Acceptor> _acceptor;
+		std::unique_ptr<TcpAcceptor> _acceptor;
 		std::unique_ptr<EventLoopCluster> _cluster;
 
 		RecvMessageCallback _recvMessageCallback;

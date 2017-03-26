@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "Acceptor.h"
+#include "TcpAcceptor.h"
 #include "net/fd/Socket.h"
 #include "net/EventLoop.h"
 #include "base/Logging.h"
@@ -13,25 +13,24 @@
 
 namespace saf
 {
-	Acceptor::Acceptor(EventLoop *loop, const InetAddress &addr, NetProtocal protocal, bool reusePort):
+	TcpAcceptor::TcpAcceptor(EventLoop *loop, const InetAddress &addr, bool reusePort):
 		_listening(false),
 		_reusePort(reusePort),
 		_loop(loop),
 		_addr(addr),
-		_protocal(protocal),
 		_socket(nullptr),
 		_idleFd(::open("/dev/null", O_RDONLY | O_CLOEXEC))
 	{
 
 	}
 
-	Acceptor::~Acceptor()
+	TcpAcceptor::~TcpAcceptor()
 	{
 		stopInLoop();
 		::close(_idleFd);
 	}
 
-	void Acceptor::listenInLoop()
+	void TcpAcceptor::listenInLoop()
 	{
 		_loop->assertInLoopThread();
 
@@ -39,17 +38,17 @@ namespace saf
 			return;
 		_listening = true;
 
-		_socket.reset(Socket::create(_protocal, _addr.getFamily()));
+		_socket.reset(Socket::create(NetProtocal::TCP, _addr.getFamily()));
 		_socket->attachInLoop(_loop);
 		_socket->setReuseAddr(true);
 		_socket->setReusePort(_reusePort);
-		_socket->setReadCallback(std::bind(&Acceptor::handleReadInLoop, this));
+		_socket->setReadCallback(std::bind(&TcpAcceptor::handleReadInLoop, this));
 		_socket->bind(_addr);
-		_socket->listen();
 		_socket->enableReadInLoop();
+		_socket->listen();
 	}
 
-	void Acceptor::stopInLoop()
+	void TcpAcceptor::stopInLoop()
 	{
 		_loop->assertInLoopThread();
 
@@ -62,7 +61,7 @@ namespace saf
 		}
 	}
 
-	void Acceptor::handleReadInLoop()
+	void TcpAcceptor::handleReadInLoop()
 	{
 		_loop->assertInLoopThread();
 
@@ -77,7 +76,7 @@ namespace saf
 		}
 		else
 		{
-			LOG_ERROR("Acceptor::handleReadInLoop")
+			LOG_ERROR("TcpAcceptor::handleReadInLoop")
 			// Read the section named "The special problem of
 			// accept()ing when you can't" in libev's doc.
 			// By Marc Lehmann, author of libev.

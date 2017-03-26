@@ -97,16 +97,16 @@ int main()
 
 	EventLoop loop;
 
-	Server server(&loop, InetAddress(5000), NetProtocal::UDP);
+	TcpServer server(&loop, InetAddress(5000));
 	server.start(1);
 
 	loop.addTimer(5.0, [&server](){
 		server.stop();
 	});
 
-	Client client(&loop, InetAddress("127.0.0.1", 5000), NetProtocal::TCP, 3.0f);
+	TcpClient client(&loop, InetAddress("127.0.0.1", 5000), 3.0f);
 	client.setRecvMessageCallback([](const ConnectionPtr& conn, Buffer* buffer){
-		LOG_INFO("Client RecvMessageCallback: %s", buffer->retrieveAllAsString().c_str());
+		LOG_INFO("TcpClient RecvMessageCallback: %s", buffer->retrieveAllAsString().c_str());
 	});
 
 	loop.addTimer(1.0, [&client](){

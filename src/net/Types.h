@@ -12,9 +12,9 @@
 namespace saf
 {
 	class Buffer;
-	class Connection;
+	class TcpConnection;
 
-	typedef std::shared_ptr<Connection> ConnectionPtr;
+	typedef std::shared_ptr<TcpConnection> ConnectionPtr;
 
 	typedef std::function<void(const ConnectionPtr&, Buffer*)> RecvMessageCallback;
 	typedef std::function<void(const ConnectionPtr&)> ConnectChangeCallback;
