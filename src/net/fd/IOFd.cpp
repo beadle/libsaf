@@ -13,11 +13,11 @@ namespace saf
 	const int IOFd::kReadEvent = POLLIN | POLLPRI;
 	const int IOFd::kWriteEvent = POLLOUT;
 
-	IOFd::IOFd(EventLoop *looper, int fd) :
+	IOFd::IOFd(int fd) :
 		Fd(fd),
+		_looper(nullptr),
 		_handling(false),
 		_revents(0),
-		_looper(looper),
 		_status(Status::NEW)
 	{
 
@@ -27,9 +27,10 @@ namespace saf
 	{
 		assert(!_handling);
 		assert(_status != Status::ADDED);
+		assert(isNoneEvent());
 	}
 
-	void IOFd::enableRead()
+	void IOFd::enableReadInLoop()
 	{
 		if (!isReading())
 		{
@@ -38,7 +39,7 @@ namespace saf
 		}
 	}
 
-	void IOFd::enableWrite()
+	void IOFd::enableWriteInLoop()
 	{
 		if (!isWriting())
 		{
@@ -47,7 +48,7 @@ namespace saf
 		}
 	}
 
-	void IOFd::disableRead()
+	void IOFd::disableReadInLoop()
 	{
 		if (isReading())
 		{
@@ -56,7 +57,7 @@ namespace saf
 		}
 	}
 
-	void IOFd::disableWrite()
+	void IOFd::disableWriteInLoop()
 	{
 		if (isWriting())
 		{
@@ -65,7 +66,7 @@ namespace saf
 		}
 	}
 
-	void IOFd::disableAll()
+	void IOFd::disableAllInLoop()
 	{
 		if (_events)
 		{
@@ -85,6 +86,7 @@ namespace saf
 		if ((_revents & POLLHUP) && !(_revents & POLLIN))
 		{
 			if (_closeCallback) _closeCallback();
+			goto end;
 		}
 		if (_revents & (POLLERR | POLLNVAL))
 		{
@@ -98,7 +100,49 @@ namespace saf
 		{
 			if (_writeCallback) _writeCallback();
 		}
+
+		end:
 		_handling = false;
 		_revents = 0;
 	}
+
+	void IOFd::attachInLoop(EventLoop *looper)
+	{
+		assert(looper);
+		looper->assertInLoopThread();
+
+		if (looper == _looper)
+		{
+			return;
+		}
+
+		if (_looper)
+		{
+			detachInLoop();
+		}
+
+		_looper = looper;
+		if (_events)
+		{
+			update();
+		}
+	}
+
+	bool IOFd::detachInLoop()
+	{
+		if (_looper)
+		{
+			_looper->assertInLoopThread();
+
+			disableAllInLoop();
+			_looper->removeFd(this);
+			_looper = nullptr;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
 }

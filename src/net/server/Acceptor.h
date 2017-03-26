@@ -7,9 +7,10 @@
 
 #include <memory>
 #include <functional>
+#include <atomic>
 
-#include "InetAddress.h"
-#include "Types.h"
+#include "net/InetAddress.h"
+#include "net/Types.h"
 
 
 namespace saf
@@ -20,7 +21,7 @@ namespace saf
 
 	class Acceptor
 	{
-	public:
+	protected:
 		typedef std::function<void(int, const InetAddress&)> AcceptCallback;
 
 	public:
@@ -30,19 +31,25 @@ namespace saf
 				 bool reusePort=false);
 		~Acceptor();
 
-		void listen();
-
+	protected:
 		void setAcceptCallback(const AcceptCallback& callback)
 		{ _callback = std::move(callback); }
 
 		const InetAddress& getAddress() const { return _addr; }
 
-	protected:
-		void handleRead();
+		void listenInLoop();
+		void stopInLoop();
+
+		friend class Server;
 
 	private:
+		void handleReadInLoop();
+
+	private:
+		bool _reusePort;
 		bool _listening;
 		int _idleFd;
+		NetProtocal _protocal;
 		EventLoop* _loop;
 		std::unique_ptr<Socket> _socket;
 		AcceptCallback _callback;

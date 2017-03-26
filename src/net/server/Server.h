@@ -22,13 +22,14 @@ namespace saf
 	class Server : public ConnectionObserver
 	{
 	public:
-		Server(const InetAddress& addr, NetProtocal protocal);
+		Server(EventLoop* loop, const InetAddress& addr, NetProtocal protocal);
 		~Server();
 
+	public:  /// Thread-Safed Methods
 		void start(size_t threadCount);
 		void stop();
 
-		EventLoop* getLoop() const { return _loop.get(); }
+		EventLoop* getLoop() const { return _loop; }
 
 		/// Set connection callback.
 		/// Not thread safe.
@@ -48,27 +49,24 @@ namespace saf
 		void setWriteCompleteCallback(const WriteCompleteCallback& cb)
 		{ _writeCompleteCallback = std::move(cb); }
 
-	protected:
-		void newConnection(int connfd, const InetAddress &addr);
-		void removeConnection(const ConnectionPtr& conn);
+	protected:  /// Looper Thread Methods
+		void newConnectionInLoop(int connfd, const InetAddress &addr);
+		void removeConnectionInLoop(const ConnectionPtr &conn);
+		ConnectionPtr createConnectionInLoop(int connfd);
 
-		/// ConnectionObserver's interfaces
-		/// Called by TcpConnection from other EventLoop(Thread)s
-		void onConnReceivedMessage(const ConnectionPtr&, Buffer*);
-		void onConnWriteCompleted(const ConnectionPtr&);
-		void onConnConnectChanged(const ConnectionPtr&);
-		void onConnClosed(const ConnectionPtr&);
-
-		ConnectionPtr createConnection(int connfd);
+	protected:  /// Connection Thread Methods
+		void onReceivedMessageInConnection(const ConnectionPtr&, Buffer*);
+		void onWriteCompletedInConnection(const ConnectionPtr&);
+		void onConnectChangedInConnection(const ConnectionPtr&);
+		void onClosedInConnection(const ConnectionPtr&);
 
 	private:
 		typedef std::unordered_map<int, std::shared_ptr<Connection> > ConnectionMap;
 
-		bool _started;
-		int _connCount;
+		bool _running;
 		NetProtocal _protocal;
+		EventLoop* _loop;
 
-		std::unique_ptr<EventLoop> _loop;
 		std::unique_ptr<Acceptor> _acceptor;
 		std::unique_ptr<EventLoopCluster> _cluster;
 

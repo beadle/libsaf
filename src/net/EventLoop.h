@@ -38,12 +38,12 @@ namespace saf
 		int addTimer(float delay, const Functor& callback, bool repeated=false);
 		void cancelTimer(int fd);
 
-	public:  // exposed to fd objects(Socket, Timer...)
-		void updateFd(IOFd* fd);
-		void removeFd(IOFd* fd);
-
 		bool isInLoopThread() { return _threadId == CurrentThread::tid(); }
 		void assertInLoopThread() { if (!isInLoopThread()) abortNotInLoopThread(); }
+
+	public:  // exposed to IOFd only
+		void updateFd(IOFd* fd);
+		void removeFd(IOFd *fd);
 
 	protected:
 		void wakeup();

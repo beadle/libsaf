@@ -28,7 +28,7 @@ namespace saf
 			kDisconnecting,
 		};
 
-	public:
+	public: /// Thread-Safed Methods
 		Connection(EventLoop* loop, Socket* socket, int index);
 		~Connection();
 
@@ -36,7 +36,6 @@ namespace saf
 		bool isDisconnected() const { return _status == kDisconnected; }
 
 		int getIndex() const { return _index; }
-		Socket* getSocket() const { return _socket.get(); }
 		EventLoop* getLooper() const { return _loop; }
 		virtual NetProtocal getProtocal() const = 0;
 
@@ -46,25 +45,23 @@ namespace saf
 		void shutdown();
 		void forceClose();
 
-	protected:
+	protected:  /// Friend Methods
+		void changeStatus(int status);
 		void setObserver(ConnectionObserver* observer) { _observer = observer; }
-
-		/// Callbacks from TcpServer (Currenr Looper Thread)
-		void onConnectEstablished();
-		void onConnectDestroyed();
 
 		friend class Server;
 		friend class Client;
 
-	protected:
+	protected:  /// Looper Thread Methods
 		void sendInLoop(const void* data, size_t len);
-		void changeStatus(int status);
 
-		/// Callbacks from Socket FD
-		void handleRead();
-		void handleWrite();
-		void handleError();
-		void handleClose();
+		void handleReadInLoop();
+		void handleWriteInLoop();
+		void handleErrorInLoop();
+		void handleCloseInLoop();
+
+		void onConnectEstablishedInLoop();
+		void onConnectDestroyedInLoop();
 
 	private:
 		int _index;

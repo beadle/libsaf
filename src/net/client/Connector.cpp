@@ -39,12 +39,6 @@ namespace saf
 		_loop->runInLoop(std::bind(&Connector::connectInLoop, this));
 	}
 
-	void Connector::reconnect()
-	{
-		_stopping = false;
-		_loop->runInLoop(std::bind(&Connector::reconnectInLoop, this));
-	}
-
 	void Connector::disconnect()
 	{
 		_stopping = true;
@@ -56,13 +50,9 @@ namespace saf
 		_loop->assertInLoopThread();
 		if (_stopping) return;
 
-		if (_socket)
-		{
-			detachFromEventPool();
-			_socket.reset();
-		}
+		resetSocket();
 
-		_socket.reset(Socket::create(_loop, _protocal, _addr.getFamily()));
+		_socket.reset(Socket::create(_protocal, _addr.getFamily()));
 		int ret = _socket->connect(_addr);
 		int savedErrno = (ret == 0) ? 0 : errno;
 		switch (savedErrno)
@@ -71,7 +61,7 @@ namespace saf
 			case EINPROGRESS:
 			case EINTR:
 			case EISCONN:
-				onConnecting();
+				onConnectingInLoop();
 				break;
 
 			case EAGAIN:
@@ -79,7 +69,7 @@ namespace saf
 			case EADDRNOTAVAIL:
 			case ECONNREFUSED:
 			case ENETUNREACH:
-				onRetry();
+				onRetryInLoop();
 				break;
 
 			case EACCES:
@@ -100,53 +90,49 @@ namespace saf
 		}
 	}
 
-	void Connector::reconnectInLoop()
-	{
-		connectInLoop();
-	}
-
 	void Connector::disconnectInLoop()
 	{
 		_loop->assertInLoopThread();
 
 		changeStatus(kDisconnected);
-		detachFromEventPool();
-		_socket.reset();
+		resetSocket();
 	}
 
-	void Connector::onConnecting()
+	void Connector::onConnectingInLoop()
 	{
 		changeStatus(kConnecting);
-		_socket->setWriteCallback(std::bind(&Connector::handleWrite, this));
-		_socket->setErrorCallback(std::bind(&Connector::handleError, this));
+
+		_socket->setWriteCallback(std::bind(&Connector::handleWriteInLoop, this));
+		_socket->setErrorCallback(std::bind(&Connector::handleErrorInLoop, this));
 		_socket->setReadCallback(nullptr);
-		_socket->setCloseCallback(nullptr);
-		_socket->enableWrite();
+		_socket->setCloseCallback(std::bind(&Connector::handleCloseInLoop, this));
+		_socket->attachInLoop(_loop);
+		_socket->enableWriteInLoop();
 	}
 
-	void Connector::onRetry()
+	void Connector::onRetryInLoop()
 	{
 		changeStatus(kDisconnected);
-		detachFromEventPool();
-		_socket.reset();
+		resetSocket();
 
-		LOG_INFO("Connector::onRetry - Retry connecting to %s in %f seconds.", _addr.toIpPort(), _retrySeconds);
+		LOG_INFO("Connector::onRetryInLoop - Retry connecting to %s in %f seconds.", _addr.toIpPort().c_str(), _retrySeconds);
 		_loop->addTimer(_retrySeconds, std::bind(&Connector::connectInLoop, shared_from_this()));
 	}
 
-	void Connector::handleWrite()
+	void Connector::handleWriteInLoop()
 	{
 		if (_status == kConnecting)
 		{
-			detachFromEventPool();
+			_socket->detachInLoop();
 			int err = _socket->getSocketError();
 			if (err)
 			{
-				LOG_WARN("Connector::handleWrite - SO_ERROR(%d): %s", err, errnoToString(err));
-				onRetry();
+				LOG_WARN("Connector::handleWriteInLoop - SO_ERROR(%d): %s", err, errnoToString(err));
+				onRetryInLoop();
 			}
 			else
 			{
+				LOG_INFO("Connect to %s successfully.", _addr.toIpPort().c_str());
 				changeStatus(kConnected);
 				if (_connectedCallback)
 					_connectedCallback(_socket);
@@ -154,32 +140,42 @@ namespace saf
 		}
 		else
 		{
-			detachFromEventPool();
-			LOG_WARN("Connector::handleWrite error status: %d", int(_status));
+			LOG_WARN("Connector::handleWriteInLoop error status: %d", int(_status));
 			changeStatus(kDisconnected);
 		}
 	}
 
-	void Connector::handleError()
+	void Connector::handleErrorInLoop()
 	{
-		LOG_ERROR("Connector::handleError error status: %d", int(_status));
+		LOG_ERROR("Connector::handleErrorInLoop error status: %d", int(_status));
 		if (_status == kConnecting)
 		{
 			int err = _socket->getSocketError();
-			LOG_ERROR("onnector::handleError - SO_ERROR(%d): %s", err, errnoToString(err));
+			LOG_ERROR("Connector::handleErrorInLoop - SO_ERROR(%d): %s", err, errnoToString(err));
 
 			_loop->queueInLoop([this](){
-				onRetry();
+				onRetryInLoop();
 			});
 		}
 	}
 
-	void Connector::detachFromEventPool()
+	void Connector::handleCloseInLoop()
+	{
+		LOG_INFO("Connector::handleCloseInLoop - status: %d", int(_status))
+		if (_status == kConnecting)
+		{
+			_loop->queueInLoop([this](){
+				onRetryInLoop();
+			});
+		}
+	}
+
+	void Connector::resetSocket()
 	{
 		if (_socket)
 		{
-			_socket->disableAll();
-			_loop->removeFd(_socket.get());
+			_socket->detachInLoop();
+			_socket.reset();
 		}
 	}
 }

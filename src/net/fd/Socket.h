@@ -16,18 +16,16 @@ namespace saf
 	class Socket : public IOFd
 	{
 	public:
-		static Socket* create(
-				EventLoop* loop, NetProtocal protocal=NetProtocal::TCP, sa_family_t family=AF_INET);
+		static Socket* create(NetProtocal protocal, sa_family_t family=AF_INET);
 
 	public:
-		Socket(EventLoop* loop, int fd);
+		Socket(int fd);
 		~Socket();
 
 		void bind(const InetAddress& localAddr);
 		void listen();
 		int accept(InetAddress& peerAddr);
 		int connect(const InetAddress& serverAddr);
-
 		void shutdown();
 
 		int getSocketError();

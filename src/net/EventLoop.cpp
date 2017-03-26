@@ -39,7 +39,7 @@ namespace saf
 		_looping(false),
 		_handling(false),
 		_currentFd(nullptr),
-		_wakeupFd(new IOFd(this, createEventfd())),
+		_wakeupFd(new IOFd(createEventfd())),
 		_poller(Poller::createPoller()),
 		_timerQueue(new TimerQueue(this))
 	{
@@ -53,7 +53,8 @@ namespace saf
 			t_looperInThread = this;
 		}
 
-		_wakeupFd->enableRead();
+		_wakeupFd->attachInLoop(this);
+		_wakeupFd->enableReadInLoop();
 		_wakeupFd->setReadCallback(std::bind(&EventLoop::handleWakeupRead, this));
 	}
 
@@ -62,7 +63,7 @@ namespace saf
 		assertInLoopThread();
 		LOG_DEBUG("EventLoop(%p) of thread(%d) destructs", this, _threadId);
 
-		_wakeupFd->disableAll();
+		_wakeupFd->disableAllInLoop();
 		removeFd(_wakeupFd.get());
 		::close(_wakeupFd->getFd());
 
@@ -77,8 +78,6 @@ namespace saf
 
 		_quit = false;
 		_looping = true;
-
-		LOG_DEBUG("EventLoop(%p) of thread(%d) connect looping", this, _threadId);
 
 		while (!_quit)
 		{
@@ -98,7 +97,6 @@ namespace saf
 		}
 
 		_looping = false;
-		LOG_DEBUG("EventLoop(%p) of thread(%d) disconnect looping", this, _threadId);
 
 	}
 
@@ -145,6 +143,7 @@ namespace saf
 	{
 		assert(fd->getLooper() == this);
 		assertInLoopThread();
+
 		_poller->updateFd(fd);
 	}
 
@@ -152,6 +151,7 @@ namespace saf
 	{
 		assert(fd->getLooper() == this);
 		assertInLoopThread();
+
 		_poller->removeFd(fd);
 	}
 

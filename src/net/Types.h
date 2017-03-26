@@ -25,10 +25,10 @@ namespace saf
 	class ConnectionObserver
 	{
 	public:
-		virtual void onConnReceivedMessage(const ConnectionPtr&, Buffer*) = 0;
-		virtual void onConnWriteCompleted(const ConnectionPtr&) = 0;
-		virtual void onConnConnectChanged(const ConnectionPtr&) = 0;
-		virtual void onConnClosed(const ConnectionPtr&) = 0;
+		virtual void onReceivedMessageInConnection(const ConnectionPtr&, Buffer*) = 0;
+		virtual void onWriteCompletedInConnection(const ConnectionPtr&) = 0;
+		virtual void onConnectChangedInConnection(const ConnectionPtr&) = 0;
+		virtual void onClosedInConnection(const ConnectionPtr&) = 0;
 	};
 
 	enum class NetProtocal {

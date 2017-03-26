@@ -28,10 +28,10 @@ namespace saf
 		_status(kConnecting),
 		_socket(socket)
 	{
-		_socket->setReadCallback(std::bind(&Connection::handleRead, this));
-		_socket->setWriteCallback(std::bind(&Connection::handleWrite, this));
-		_socket->setCloseCallback(std::bind(&Connection::handleClose, this));
-		_socket->setErrorCallback(std::bind(&Connection::handleError, this));
+		_socket->setReadCallback(std::bind(&Connection::handleReadInLoop, this));
+		_socket->setWriteCallback(std::bind(&Connection::handleWriteInLoop, this));
+		_socket->setCloseCallback(std::bind(&Connection::handleCloseInLoop, this));
+		_socket->setErrorCallback(std::bind(&Connection::handleErrorInLoop, this));
 	}
 
 	Connection::~Connection()
@@ -46,7 +46,11 @@ namespace saf
 
 		changeStatus(kDisconnecting);
 
-		_loop->queueInLoop(std::bind(&Connection::handleClose, shared_from_this()));
+		auto self = shared_from_this();
+		_loop->queueInLoop([self]()
+		{
+			self->handleCloseInLoop();
+		});
 	}
 
 	void Connection::shutdown()
@@ -55,9 +59,12 @@ namespace saf
 			return;
 
 		changeStatus(kDisconnecting);
-		_loop->runInLoop([this](){
-			if (!_socket->isWriting())
-				_socket->shutdown();
+
+		auto self = shared_from_this();
+		_loop->queueInLoop([self]()
+		{
+			if (!self->_socket->isWriting())
+				self->_socket->shutdown();
 		});
 	}
 
@@ -73,7 +80,8 @@ namespace saf
 		else
 		{
 			std::shared_ptr<std::string> copied(new std::string(data.toString()));
-			_loop->queueInLoop([this, copied](){
+			_loop->queueInLoop([this, copied]()
+			{
 				sendInLoop(copied->c_str(), copied->size());
 			});
 		}
@@ -88,7 +96,7 @@ namespace saf
 	{
 		_loop->assertInLoopThread();
 
-		_socket->enableWrite();
+		_socket->enableWriteInLoop();
 		_outputBuffer.append(data, len);
 	}
 
@@ -97,7 +105,7 @@ namespace saf
 		_status = status;
 	}
 
-	void Connection::handleRead()
+	void Connection::handleReadInLoop()
 	{
 		_loop->assertInLoopThread();
 
@@ -105,20 +113,20 @@ namespace saf
 		if (n > 0)
 		{
 			if (_observer)
-				_observer->onConnReceivedMessage(shared_from_this(), &_inputBuffer);
+				_observer->onReceivedMessageInConnection(shared_from_this(), &_inputBuffer);
 		}
 		else if (n == 0)
 		{
-			handleClose();
+			handleCloseInLoop();
 		}
 		else
 		{
-			LOG_ERROR("TcpConnection::handleRead");
-			handleError();
+			LOG_ERROR("TcpConnection::handleReadInLoop");
+			handleErrorInLoop();
 		}
 	}
 
-	void Connection::handleWrite()
+	void Connection::handleWriteInLoop()
 	{
 		_loop->assertInLoopThread();
 
@@ -132,14 +140,14 @@ namespace saf
 				_outputBuffer.retrieve(static_cast<size_t >(n));
 				if (_outputBuffer.readableBytes() == 0)
 				{
-					_socket->disableWrite();
+					_socket->disableWriteInLoop();
 					if (_observer)
-						_observer->onConnWriteCompleted(shared_from_this());
+						_observer->onWriteCompletedInConnection(shared_from_this());
 				}
 			}
 			else
 			{
-				LOG_ERROR("TcpConnection::handleWrite")
+				LOG_ERROR("TcpConnection::handleWriteInLoop")
 			}
 		}
 		else
@@ -148,49 +156,52 @@ namespace saf
 		}
 	}
 
-	void Connection::handleClose()
+	void Connection::handleCloseInLoop()
 	{
 		_loop->assertInLoopThread();
 
 		LOG_DEBUG("Connection(%d) state = %s", getIndex(), gStatusNames[_status]);
 
 		assert(_status == kConnected || _status == kDisconnecting);
-		changeStatus(kDisconnected);
 
-		_socket->disableAll();
-		_loop->removeFd(_socket.get());
+		_socket->detachInLoop();
+		changeStatus(kDisconnected);
 
 		if (_observer)
 		{
 			ConnectionPtr guardThis(shared_from_this());
-			_observer->onConnConnectChanged(guardThis);
-			_observer->onConnClosed(guardThis);
+			_observer->onConnectChangedInConnection(guardThis);
+			_observer->onClosedInConnection(guardThis);
 			_observer = nullptr;
 		}
 	}
 
-	void Connection::handleError()
+	void Connection::handleErrorInLoop()
 	{
+		_loop->assertInLoopThread();
+
 		int err = _socket->getSocketError();
-		LOG_ERROR("TcpConnection::handleError [%d] - SO_ERROR(%d): %s", getIndex(), err, errnoToString(err));
+		LOG_ERROR("TcpConnection::handleErrorInLoop [%d] - SO_ERROR(%d): %s", getIndex(), err, errnoToString(err));
 	}
 
-	void Connection::onConnectEstablished()
+	void Connection::onConnectEstablishedInLoop()
 	{
 		_loop->assertInLoopThread();
 
 		changeStatus(kConnected);
-		_socket->enableRead();
+		_socket->attachInLoop(_loop);
+		_socket->enableReadInLoop();
 
 		if (_observer)
-			_observer->onConnConnectChanged(shared_from_this());
+			_observer->onConnectChangedInConnection(shared_from_this());
 	}
 
-	void Connection::onConnectDestroyed()
+	void Connection::onConnectDestroyedInLoop()
 	{
 		_loop->assertInLoopThread();
 
-		_socket->disableAll();
+		/// redundant code
+		_socket->detachInLoop();
 		changeStatus(kDisconnected);
 	}
 }

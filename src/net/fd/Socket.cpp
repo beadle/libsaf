@@ -12,21 +12,32 @@
 namespace saf
 {
 
-	Socket* Socket::create(EventLoop* loop, NetProtocal protocal, sa_family_t family)
+	Socket* Socket::create(NetProtocal protocal, sa_family_t family)
 	{
 		auto flags = SOCK_NONBLOCK | SOCK_CLOEXEC;
-		flags |= (protocal == NetProtocal::TCP ? SOCK_STREAM : SOCK_DGRAM);
+		auto proto = 0;
 
-		int sockfd = ::socket(family, flags, IPPROTO_TCP);
+		switch (protocal)
+		{
+			case NetProtocal::TCP:
+				flags |= SOCK_STREAM;
+				proto = IPPROTO_TCP;
+				break;
+			default:
+				flags |= SOCK_DGRAM;
+				break;
+		}
+
+		int sockfd = ::socket(family, flags, proto);
 		if (sockfd < 0)
 		{
 			LOG_FATAL("Socket::create");
 		}
-		return new Socket(loop, sockfd);
+		return new Socket(sockfd);
 	}
 
-	Socket::Socket(EventLoop *loop, int fd):
-		IOFd(loop, fd)
+	Socket::Socket(int fd):
+		IOFd(fd)
 	{
 
 	}
@@ -50,7 +61,7 @@ namespace saf
 		int ret = ::listen(getFd(), SOMAXCONN);
 		if (ret < 0)
 		{
-			LOG_FATAL("Socket::listen")
+			LOG_FATAL("Socket::listenInLoop")
 		}
 	}
 

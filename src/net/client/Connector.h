@@ -19,39 +19,38 @@ namespace saf
 
 	class Connector : public std::enable_shared_from_this<Connector>
 	{
-	public:
+	protected:
 		typedef std::function<bool(std::unique_ptr<Socket>&)> ConnectedCallback;
 
 	public:
 		Connector(EventLoop* loop, float retrySeconds);
 		~Connector();
 
+	protected:
 		void connect(const InetAddress &addr, NetProtocal protocal);
-		void reconnect();
 		void disconnect();
-
-		const InetAddress& getAddress() const { return _addr; };
-		NetProtocal getProtocal() const { return _protocal; }
 
 		void setConnectedCallback(const ConnectedCallback& callback)
 		{ _connectedCallback = callback; }
 
-	protected:
+		friend class Client;
+
+	private:
 		enum { kDisconnected, kConnecting, kConnected, };
 
-		void changeStatus(int status) { _status = status; }
-
 		void connectInLoop();
-		void reconnectInLoop();
 		void disconnectInLoop();
 
-		void onConnecting();
-		void onRetry();
+		void onConnectingInLoop();
+		void onRetryInLoop();
 
-		void handleWrite();
-		void handleError();
+		void handleWriteInLoop();
+		void handleErrorInLoop();
+		void handleCloseInLoop();
 
-		void detachFromEventPool();
+	private:
+		void changeStatus(int status) { _status = status; }
+		void resetSocket();
 
 	private:
 		InetAddress _addr;

@@ -18,7 +18,7 @@ namespace saf
 	TcpConnection::TcpConnection(EventLoop *loop, Socket* socket, int index):
 		Connection(loop, socket, index)
 	{
-
+		socket->setKeepAlive(true);
 	}
 
 	TcpConnection::~TcpConnection()

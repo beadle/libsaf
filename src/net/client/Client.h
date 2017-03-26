@@ -22,13 +22,14 @@ namespace saf
 	class Client : public ConnectionObserver
 	{
 	public:
-		Client(const InetAddress& addr, NetProtocal protocal, float reconnectDelay);
+		Client(EventLoop* loop, const InetAddress& addr, NetProtocal protocal, float reconnectDelay);
 		~Client();
 
+	public:  /// Thread-Safed Methods
 		void connect();
 		void disconnect();
 
-		EventLoop* getLoop() const { return _loop.get(); }
+		ConnectionPtr getConnection() const { return _connection; }
 
 		/// Set connection callback.
 		/// Not thread safe.
@@ -48,24 +49,23 @@ namespace saf
 		void setWriteCompleteCallback(const WriteCompleteCallback& cb)
 		{ _writeCompleteCallback = std::move(cb); }
 
-	protected:
-		bool onConnectedCallback(std::unique_ptr<Socket>& socket);
+	protected:  /// Looper Thread Methods
+		bool newConnectionInLoop(std::unique_ptr<Socket> &socket);
+		void removeConnectionInLoop(const ConnectionPtr &conn);
 
-		void onConnReceivedMessage(const ConnectionPtr&, Buffer*);
-		void onConnWriteCompleted(const ConnectionPtr&);
-		void onConnConnectChanged(const ConnectionPtr&);
-		void onConnClosed(const ConnectionPtr&);
-
-		void removeConnection(const ConnectionPtr& conn);
+		void onReceivedMessageInConnection(const ConnectionPtr&, Buffer*);
+		void onWriteCompletedInConnection(const ConnectionPtr&);
+		void onConnectChangedInConnection(const ConnectionPtr&);
+		void onClosedInConnection(const ConnectionPtr&);
 
 	private:
+		EventLoop* _loop;
 		std::atomic_bool _connecting;
 		InetAddress _addr;
 		NetProtocal _protocal;
-		float _reconnectDelay;
 
-		std::unique_ptr<EventLoop> _loop;
-		std::unique_ptr<Connector> _connector;
+		float _reconnectDelay;
+		std::shared_ptr<Connector> _connector;
 		std::shared_ptr<Connection> _connection;
 
 		RecvMessageCallback _recvMessageCallback;

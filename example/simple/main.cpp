@@ -10,6 +10,7 @@
 #include "core.h"
 
 using namespace std;
+using namespace saf;
 
 void test_timer(saf::EventLoop* loop)
 {
@@ -94,20 +95,32 @@ int main()
 {
 	INIT_LOGGER;
 
-//	saf::Server server(
-//		saf::InetAddress(5000),
-//		saf::NetProtocal::TCP
-//	);
-////	server.getLoop()->addTimer(8.0, [&server](){
-////		server.stop();
-////	});
-//	server.start(4);
+	EventLoop loop;
 
-	saf::Client client(saf::InetAddress("127.0.0.1", 5000), saf::NetProtocal::TCP, 3.0f);
-//	client.getLoop()->addTimer(8.0, [&client](){
-//		client.disconnect();
-//	});
-	client.connect();
+	Server server(&loop, InetAddress(5000), NetProtocal::UDP);
+	server.start(1);
+
+	loop.addTimer(5.0, [&server](){
+		server.stop();
+	});
+
+	Client client(&loop, InetAddress("127.0.0.1", 5000), NetProtocal::TCP, 3.0f);
+	client.setRecvMessageCallback([](const ConnectionPtr& conn, Buffer* buffer){
+		LOG_INFO("Client RecvMessageCallback: %s", buffer->retrieveAllAsString().c_str());
+	});
+
+	loop.addTimer(1.0, [&client](){
+		client.connect();
+	});
+
+	loop.addTimer(3.0, [&client](){
+		static int counter = 'A';
+		auto connection = client.getConnection();
+		if (connection)
+			connection->send(std::string("Hello World: ") + char(counter++));
+	}, true);
+
+	loop.start();
 
 	return 0;
 }
