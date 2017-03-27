@@ -5,7 +5,7 @@
 #include "TcpClient.h"
 #include "TcpConnector.h"
 
-#include "net/connection/TcpConnection.h"
+#include "TcpConnection.h"
 #include "net/EventLoop.h"
 
 

@@ -3,7 +3,7 @@
 //
 
 #include "TcpServer.h"
-#include "net/connection/TcpConnection.h"
+#include "TcpConnection.h"
 
 #include "base/Logging.h"
 #include "net/EventLoop.h"

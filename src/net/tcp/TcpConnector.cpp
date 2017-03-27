@@ -9,7 +9,7 @@
 #include "base/Logging.h"
 #include "net/EventLoop.h"
 #include "net/fd/Socket.h"
-#include "net/connection/TcpConnection.h"
+#include "TcpConnection.h"
 
 
 namespace saf
