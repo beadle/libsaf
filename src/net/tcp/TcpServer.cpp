@@ -16,15 +16,10 @@
 
 namespace saf
 {
-	std::atomic_int gConnectionCounter(0);
-
-	TcpServer::TcpServer(EventLoop* loop, const InetAddress &addr):
-			_running(false),
-			_loop(loop),
-			_acceptor(new TcpAcceptor(_loop, addr)),
-			_cluster(new EventLoopCluster())
+	TcpServer::TcpServer(EventLoop* loop):
+		Server(loop),
+		_acceptor(new TcpAcceptor(_loop))
 	{
-
 		LOG_INFO("TcpServer(%p) was created", this);
 	}
 
@@ -34,18 +29,20 @@ namespace saf
 		LOG_INFO("TcpServer(%p) was destroied", this);
 	}
 
-	void TcpServer::start(size_t threadCount)
+	void TcpServer::start(const InetAddress& addr, size_t threadCount)
 	{
 		if (_running)
 			return;
 		_running = true;
 
-		_loop->runInLoop([this, threadCount]()
+		_loop->runInLoop([this, threadCount, addr]()
 		{
 			_cluster->start(threadCount);
+
+			_acceptor.reset(new TcpAcceptor(_loop));
 			_acceptor->setAcceptCallback(
 					std::bind(&TcpServer::newConnectionInLoop, this, std::placeholders::_1, std::placeholders::_2));
-			_acceptor->listenInLoop();
+			_acceptor->listenInLoop(addr, true);
 
 			LOG_INFO("TcpServer(%p) is listening on %s", this, _acceptor->getAddress().toIpPort().c_str());
 		});
@@ -63,7 +60,7 @@ namespace saf
 
 			for (auto& conn : _connections)
 			{
-				conn.second->setObserver(nullptr);
+				conn.second->setCloseCallback(nullptr);
 				conn.second->forceClose();
 			}
 			_connections.clear();
@@ -72,23 +69,20 @@ namespace saf
 		});
 	}
 
-	ConnectionPtr TcpServer::createConnectionInLoop(int connfd, const InetAddress& addr)
+	TcpServer::TcpConnectionPtr TcpServer::createConnectionInLoop(int connfd, const InetAddress& addr)
 	{
-		int index = ++gConnectionCounter;
-		Socket* socket = new Socket(connfd);
-		return ConnectionPtr(new TcpConnection(getLoop(), socket, index));
+		Socket* socket = new Socket(connfd, NetProtocal::TCP);
+		return TcpConnectionPtr(new TcpConnection(_cluster->getNextLoop(), socket, addr.toIpPort(), addr));
 	}
 
 	void TcpServer::newConnectionInLoop(int connfd, const InetAddress &addr)
 	{
-		auto looper = _cluster->getNextLoop();
-		ConnectionPtr conn = createConnectionInLoop(connfd, addr);
+		_loop->assertInLoopThread();
+
+		TcpConnectionPtr conn = createConnectionInLoop(connfd, addr);
 		_connections[conn->getIndex()] = conn;
 
-		conn->setObserver(this);
-		conn->getLooper()->runInLoop(std::bind(&TcpConnection::onConnectEstablishedInLoop, conn));
-
-		LOG_INFO("TcpServer::newConnectionInLoop  connection(%d) from %s", conn->getIndex(), addr.toIpPort().c_str());
+		this->notifyConnectionEstablished(conn);
 	}
 
 	void TcpServer::removeConnectionInLoop(const ConnectionPtr &conn)
@@ -96,29 +90,8 @@ namespace saf
 		_loop->assertInLoopThread();
 
 		_connections.erase(conn->getIndex());
-		conn->getLooper()->runInLoop(std::bind(&TcpConnection::onConnectDestroyedInLoop, conn));
 
-		LOG_INFO("TcpServer::removeConnectionInLoop  connection(%d)", conn->getIndex());
-	}
-
-	void TcpServer::onReceivedMessageInConnection(const ConnectionPtr& conn, Buffer* buffer)
-	{
-		if (_recvMessageCallback)
-			_recvMessageCallback(conn, buffer);
-		else
-			conn->send(buffer->retrieveAsNetString());
-	}
-
-	void TcpServer::onWriteCompletedInConnection(const ConnectionPtr& conn)
-	{
-		if (_writeCompleteCallback)
-			_writeCompleteCallback(conn);
-	}
-
-	void TcpServer::onConnectChangedInConnection(const ConnectionPtr& conn)
-	{
-		if (_connectChangeCallback)
-			_connectChangeCallback(conn);
+		this->notifyConnectionDestroyed(conn);
 	}
 
 	void TcpServer::onClosedInConnection(const ConnectionPtr& conn)

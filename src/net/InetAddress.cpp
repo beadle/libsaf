@@ -46,6 +46,11 @@ namespace saf
 		return (const sockaddr*)&_addr;
 	}
 
+	sockaddr* InetAddress::getSockAddrRaw()
+	{
+		return (struct sockaddr*)&_addr;
+	}
+
 	uint16_t InetAddress::getPort() const
 	{
 		return net::networkToHost16(_addr.sin_port);

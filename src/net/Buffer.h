@@ -16,6 +16,8 @@
 
 namespace saf
 {
+	class InetAddress;
+
 	/// A buffer class modeled after org.jboss.netty.buffer.ChannelBuffer
 	///
 	/// @code
@@ -206,6 +208,12 @@ namespace saf
 		/// It may implement with readv(2)
 		/// @return result of read(2)
 		ssize_t readFd(int fd);
+
+		/// Recv data directly into buffer.
+		///
+		/// It may implement with recvfrom(2)
+		/// @return result of recvfrom(2)
+		ssize_t readFrom(int fd, InetAddress& addr);
 
 	protected:
 		char* begin() { return &*_buffer.begin(); }

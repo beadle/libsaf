@@ -24,6 +24,7 @@ namespace saf
 		uint16_t getPortNetEndian() const { return _addr.sin_port; }
 		uint16_t getPort() const;
 		const sockaddr* getSockAddr() const;
+		sockaddr* getSockAddrRaw();
 
 		std::string toIp() const;
 		std::string toIpPort() const;

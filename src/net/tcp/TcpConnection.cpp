@@ -9,6 +9,7 @@
 
 #include "TcpConnection.h"
 #include "base/Logging.h"
+#include "base/TimeUtils.h"
 #include "net/fd/Socket.h"
 #include "net/EventLoop.h"
 
@@ -22,9 +23,9 @@ namespace saf
 			{TcpConnection::kDisconnecting, "kDisconnecting"}
 	};
 
-	TcpConnection::TcpConnection(EventLoop* loop, Socket* socket, int index) :
-		_index(index),
-		_loop(loop),
+	TcpConnection::TcpConnection(
+			EventLoop* loop, Socket* socket, const std::string& index, const InetAddress& addr) :
+		Connection(loop, index, addr),
 		_status(kConnecting),
 		_socket(socket)
 	{
@@ -47,9 +48,9 @@ namespace saf
 		changeStatus(kDisconnecting);
 
 		auto self = shared_from_this();
-		_loop->queueInLoop([self]()
+		_loop->queueInLoop([self, this]()
 		{
-			self->handleCloseInLoop();
+			handleCloseInLoop();
 		});
 	}
 
@@ -61,38 +62,14 @@ namespace saf
 		changeStatus(kDisconnecting);
 
 		auto self = shared_from_this();
-		_loop->queueInLoop([self]()
+		_loop->queueInLoop([self, this]()
 		{
-			if (!self->_socket->isWriting())
-				self->_socket->shutdown();
+			if (!_socket->isWriting())
+				_socket->shutdown();
 		});
 	}
 
-	void TcpConnection::send(const NetString &data)
-	{
-		if (_status != kConnected)
-			return;
-
-		if (_loop->isInLoopThread())
-		{
-			sendInLoop(data.getData(), data.getLength());
-		}
-		else
-		{
-			std::shared_ptr<std::string> copied(new std::string(data.toString()));
-			_loop->queueInLoop([this, copied]()
-			{
-				sendInLoop(copied->c_str(), copied->size());
-			});
-		}
-	}
-
-	void TcpConnection::send(const char *data, size_t len)
-	{
-		this->send(NetString(data, len));
-	}
-
-	void TcpConnection::sendInLoop(const void *data, size_t len)
+	void TcpConnection::sendInLoop(const char *data, size_t len)
 	{
 		_loop->assertInLoopThread();
 
@@ -122,8 +99,9 @@ namespace saf
 		ssize_t n = readInLoop();
 		if (n > 0)
 		{
-			if (_observer)
-				_observer->onReceivedMessageInConnection(shared_from_this(), &_inputBuffer);
+			_activedTime = time::timestamp();
+			if (_recvMessageCallback)
+				_recvMessageCallback(shared_from_this(), &_inputBuffer);
 		}
 		else if (n == 0)
 		{
@@ -149,8 +127,8 @@ namespace saf
 				if (_outputBuffer.readableBytes() == 0)
 				{
 					_socket->disableWriteInLoop();
-					if (_observer)
-						_observer->onWriteCompletedInConnection(shared_from_this());
+					if (_writeCompleteCallback)
+						_writeCompleteCallback(shared_from_this());
 				}
 			}
 			else
@@ -175,13 +153,11 @@ namespace saf
 		_socket->detachInLoop();
 		changeStatus(kDisconnected);
 
-		if (_observer)
-		{
-			ConnectionPtr guardThis(shared_from_this());
-			_observer->onConnectChangedInConnection(guardThis);
-			_observer->onClosedInConnection(guardThis);
-			_observer = nullptr;
-		}
+		if (_connectChangeCallback)
+			_connectChangeCallback(shared_from_this());
+
+		if (_closeCallback)
+			_closeCallback(shared_from_this());
 	}
 
 	void TcpConnection::handleErrorInLoop()
@@ -200,8 +176,8 @@ namespace saf
 		_socket->attachInLoop(_loop);
 		_socket->enableReadInLoop();
 
-		if (_observer)
-			_observer->onConnectChangedInConnection(shared_from_this());
+		if (_connectChangeCallback)
+			_connectChangeCallback(shared_from_this());
 	}
 
 	void TcpConnection::onConnectDestroyedInLoop()

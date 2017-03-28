@@ -84,11 +84,6 @@ public:
 	}
 };
 
-void func(A&& a) {
-	A store;
-	store = a;
-	std::cout << "in function:" << &a << std::endl;
-}
 
 
 int main()
@@ -97,31 +92,41 @@ int main()
 
 	EventLoop loop;
 
-	UdpServer server(&loop, InetAddress("127.0.0.1", 5000));
-	server.start(1);
+	UdpServer udpServer(&loop);
+	udpServer.start(InetAddress("127.0.0.1", 5000), 1);
+	udpServer.setRecvMessageCallback([&udpServer](const ConnectionPtr& conn, Buffer* buffer)
+	{
+		conn->send(std::string("From UdpServer - "));
+		conn->send(buffer->retrieveAsNetString());
+	});
 
-//	TcpServer server(&loop, InetAddress(5000));
-//	server.start(1);
-//
+	TcpServer tcpServer(&loop);
+	tcpServer.start(InetAddress("127.0.0.1", 5000), 1);
+	tcpServer.setRecvMessageCallback([&tcpServer](const ConnectionPtr& conn, Buffer* buffer)
+	{
+		conn->send(std::string("From TcpServer - "));
+		conn->send(buffer->retrieveAsNetString());
+	});
 //	loop.addTimer(5.0, [&server](){
 //		server.stop();
 //	});
 //
-//	TcpClient client(&loop, InetAddress("127.0.0.1", 5000), 3.0f);
-//	client.setRecvMessageCallback([](const ConnectionPtr& conn, Buffer* buffer){
-//		LOG_INFO("TcpClient RecvMessageCallback: %s", buffer->retrieveAllAsString().c_str());
-//	});
-//
-//	loop.addTimer(1.0, [&client](){
-//		client.connect();
-//	});
-//
-//	loop.addTimer(3.0, [&client](){
-//		static int counter = 'A';
-//		auto connection = client.getConnection();
-//		if (connection)
-//			connection->send(std::string("Hello World: ") + char(counter++));
-//	}, true);
+	TcpClient client(&loop);
+	client.setReconnectDelay(3.0);
+	client.setRecvMessageCallback([](const ConnectionPtr& conn, Buffer* buffer){
+		LOG_INFO("TcpClient RecvMessageCallback: %s", buffer->retrieveAllAsString().c_str());
+	});
+
+	loop.addTimer(1.0, [&client](){
+		client.connect(InetAddress("127.0.0.1", 5000));
+	});
+
+	loop.addTimer(3.0, [&client](){
+		static int counter = 'A';
+		auto connection = client.getConnection();
+		if (connection)
+			connection->send(std::string("Hello World: ") + char(counter++));
+	}, true);
 
 	loop.start();
 

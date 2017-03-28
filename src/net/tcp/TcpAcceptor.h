@@ -2,8 +2,8 @@
 // Created by beadle on 3/14/17.
 //
 
-#ifndef LIBSAF_ACCEPTOR_H
-#define LIBSAF_ACCEPTOR_H
+#ifndef LIBSAF_TCP_ACCEPTOR_H
+#define LIBSAF_TCP_ACCEPTOR_H
 
 #include <memory>
 #include <functional>
@@ -11,6 +11,7 @@
 
 #include "net/InetAddress.h"
 #include "net/Types.h"
+#include "net/Acceptor.h"
 
 
 namespace saf
@@ -19,7 +20,7 @@ namespace saf
 	class EventLoop;
 	class InetAddress;
 
-	class TcpAcceptor
+	class TcpAcceptor : public Acceptor
 	{
 	protected:
 		typedef std::function<void(int, const InetAddress&)> AcceptCallback;
@@ -28,17 +29,14 @@ namespace saf
 		~TcpAcceptor();
 
 	protected:
-		TcpAcceptor(EventLoop *loop,
-				 const InetAddress &addr,
-				 bool reusePort=false);
+		TcpAcceptor(EventLoop *loop);
 
-	protected:
 		void setAcceptCallback(const AcceptCallback& callback)
 		{ _callback = std::move(callback); }
 
 		const InetAddress& getAddress() const { return _addr; }
 
-		void listenInLoop();
+		void listenInLoop(const InetAddress&, bool);
 		void stopInLoop();
 
 		friend class TcpServer;
@@ -47,13 +45,8 @@ namespace saf
 		void handleReadInLoop();
 
 	private:
-		bool _reusePort;
-		bool _listening;
 		int _idleFd;
-		EventLoop* _loop;
-		std::unique_ptr<Socket> _socket;
 		AcceptCallback _callback;
-		InetAddress _addr;
 	};
 }
 

@@ -14,6 +14,7 @@
 
 namespace saf
 {
+	class Client;
 	class Socket;
 	class EventLoop;
 
@@ -26,7 +27,7 @@ namespace saf
 		~TcpConnector();
 
 	protected:
-		TcpConnector(EventLoop* loop, float retrySeconds);
+		TcpConnector(EventLoop* loop, Client* master);
 
 	protected:
 		void connect(const InetAddress &addr);
@@ -55,10 +56,10 @@ namespace saf
 		void resetSocket();
 
 	private:
+		Client* _master;
 		InetAddress _addr;
 		EventLoop* _loop;
 		std::atomic_bool _stopping;
-		float _retrySeconds;
 		ConnectedCallback _connectedCallback;
 
 		std::atomic_int _status;

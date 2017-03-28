@@ -4,6 +4,7 @@
 
 #include <unistd.h>
 #include "Buffer.h"
+#include "InetAddress.h"
 
 
 namespace saf
@@ -34,6 +35,23 @@ namespace saf
 		{
 			_writerIndex = _buffer.size();
 			append(extrabuf, n - writable);
+		}
+		return n;
+	}
+
+	ssize_t Buffer::readFrom(int fd, InetAddress &addr)
+	{
+		size_t readLen = 65536;
+		socklen_t socklen = sizeof(sockaddr_in);
+		ensureWritableBytes(readLen);
+		const ssize_t n = ::recvfrom(fd, beginWrite(), readLen, 0, addr.getSockAddrRaw(), &socklen);
+		if (n < 0)
+		{
+
+		}
+		else
+		{
+			_writerIndex += n;
 		}
 		return n;
 	}

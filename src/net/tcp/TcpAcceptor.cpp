@@ -13,12 +13,8 @@
 
 namespace saf
 {
-	TcpAcceptor::TcpAcceptor(EventLoop *loop, const InetAddress &addr, bool reusePort):
-		_listening(false),
-		_reusePort(reusePort),
-		_loop(loop),
-		_addr(addr),
-		_socket(nullptr),
+	TcpAcceptor::TcpAcceptor(EventLoop *loop):
+		Acceptor(loop),
 		_idleFd(::open("/dev/null", O_RDONLY | O_CLOEXEC))
 	{
 
@@ -30,7 +26,7 @@ namespace saf
 		::close(_idleFd);
 	}
 
-	void TcpAcceptor::listenInLoop()
+	void TcpAcceptor::listenInLoop(const InetAddress& addr, bool reusePort)
 	{
 		_loop->assertInLoopThread();
 
@@ -38,10 +34,12 @@ namespace saf
 			return;
 		_listening = true;
 
+		_addr = addr;
 		_socket.reset(Socket::create(NetProtocal::TCP, _addr.getFamily()));
+
 		_socket->attachInLoop(_loop);
 		_socket->setReuseAddr(true);
-		_socket->setReusePort(_reusePort);
+		_socket->setReusePort(reusePort);
 		_socket->setReadCallback(std::bind(&TcpAcceptor::handleReadInLoop, this));
 		_socket->bind(_addr);
 		_socket->enableReadInLoop();

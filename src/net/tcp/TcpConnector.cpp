@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "TcpConnector.h"
+#include "TcpClient.h"
 
 #include "base/Logging.h"
 #include "net/EventLoop.h"
@@ -14,11 +15,11 @@
 
 namespace saf
 {
-	TcpConnector::TcpConnector(EventLoop* loop, float retrySeconds) :
+	TcpConnector::TcpConnector(EventLoop* loop, Client* master) :
 		_loop(loop),
 		_stopping(false),
 		_status(kDisconnected),
-		_retrySeconds(retrySeconds)
+		_master(master)
 	{
 
 	}
@@ -98,9 +99,9 @@ namespace saf
 	{
 		changeStatus(kConnecting);
 
+		_socket->setReadCallback(nullptr);
 		_socket->setWriteCallback(std::bind(&TcpConnector::handleWriteInLoop, this));
 		_socket->setErrorCallback(std::bind(&TcpConnector::handleErrorInLoop, this));
-		_socket->setReadCallback(nullptr);
 		_socket->setCloseCallback(std::bind(&TcpConnector::handleCloseInLoop, this));
 		_socket->attachInLoop(_loop);
 		_socket->enableWriteInLoop();
@@ -111,8 +112,12 @@ namespace saf
 		changeStatus(kDisconnected);
 		resetSocket();
 
-		LOG_INFO("TcpConnector::onRetryInLoop - Retry connecting to %s in %f seconds.", _addr.toIpPort().c_str(), _retrySeconds);
-		_loop->addTimer(_retrySeconds, std::bind(&TcpConnector::connectInLoop, shared_from_this()));
+		float retrySeconds = _master->getReconnectDelay();
+		if (retrySeconds > 0)
+		{
+			LOG_INFO("TcpConnector::onRetryInLoop - Retry connecting to %s in %f seconds.", _addr.toIpPort().c_str(), retrySeconds);
+			_loop->addTimer(retrySeconds, std::bind(&TcpConnector::connectInLoop, shared_from_this()));
+		}
 	}
 
 	void TcpConnector::handleWriteInLoop()

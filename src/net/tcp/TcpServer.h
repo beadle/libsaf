@@ -2,77 +2,45 @@
 // Created by beadle on 3/19/17.
 //
 
-#ifndef EXAMPLE_SERVER_H
-#define EXAMPLE_SERVER_H
+#ifndef EXAMPLE_TCP_SERVER_H
+#define EXAMPLE_TCP_SERVER_H
 
 #include <memory>
 #include <string>
 #include <unordered_map>
 
-#include "net/InetAddress.h"
-#include "net/Types.h"
+#include "net/Server.h"
 
 
 namespace saf
 {
-	class EventLoop;
-	class EventLoopCluster;
 	class TcpAcceptor;
+	class TcpConnection;
 
-	class TcpServer : public ConnectionObserver
+	class TcpServer : public Server
 	{
 	public:
-		TcpServer(EventLoop* loop, const InetAddress& addr);
+		TcpServer(EventLoop* loop);
 		~TcpServer();
 
 	public:  /// Thread-Safed Methods
-		void start(size_t threadCount);
+		void start(const InetAddress& addr, size_t threadCount);
 		void stop();
 
-		EventLoop* getLoop() const { return _loop; }
-
-		/// Set connection callback.
-		/// Not thread safe.
-		/// Called from connection's thread
-		void setConnectChangeCallback(const ConnectChangeCallback& cb)
-		{ _connectChangeCallback = std::move(cb); }
-
-		/// Set message callback.
-		/// Not thread safe.
-		/// Called from connection's thread
-		void setRecvMessageCallback(const RecvMessageCallback& cb)
-		{ _recvMessageCallback = std::move(cb); }
-
-		/// Set write complete callback.
-		/// Not thread safe.
-		/// Called from connection's thread
-		void setWriteCompleteCallback(const WriteCompleteCallback& cb)
-		{ _writeCompleteCallback = std::move(cb); }
-
 	protected:  /// Looper Thread Methods
+		typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
+		typedef std::unordered_map<std::string, TcpConnectionPtr> ConnectionMap;
+
 		void newConnectionInLoop(int connfd, const InetAddress &addr);
 		void removeConnectionInLoop(const ConnectionPtr &conn);
-		ConnectionPtr createConnectionInLoop(int connfd, const InetAddress& addr);
+
+		TcpConnectionPtr createConnectionInLoop(int connfd, const InetAddress& addr);
 
 	protected:  /// Connection Thread Methods
-		void onReceivedMessageInConnection(const ConnectionPtr&, Buffer*);
-		void onWriteCompletedInConnection(const ConnectionPtr&);
-		void onConnectChangedInConnection(const ConnectionPtr&);
 		void onClosedInConnection(const ConnectionPtr&);
 
 	private:
-		typedef std::unordered_map<int, std::shared_ptr<TcpConnection> > ConnectionMap;
-
-		bool _running;
-		EventLoop* _loop;
-
 		std::unique_ptr<TcpAcceptor> _acceptor;
-		std::unique_ptr<EventLoopCluster> _cluster;
-
-		RecvMessageCallback _recvMessageCallback;
-		WriteCompleteCallback _writeCompleteCallback;
-		ConnectChangeCallback _connectChangeCallback;
-
 		ConnectionMap _connections;
 	};
 

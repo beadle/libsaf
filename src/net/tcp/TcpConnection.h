@@ -2,23 +2,22 @@
 // Created by beadle on 3/23/17.
 //
 
-#ifndef EXAMPLE_CONNECTION_H
-#define EXAMPLE_CONNECTION_H
+#ifndef EXAMPLE_TCP_CONNECTION_H
+#define EXAMPLE_TCP_CONNECTION_H
 
-#include <memory>
 #include <atomic>
+#include <memory>
+
 #include "net/Buffer.h"
-#include "net/Types.h"
+#include "net/Connection.h"
 
 
 namespace saf
 {
-
 	class Socket;
-	class Buffer;
 	class EventLoop;
 
-	class TcpConnection : public std::enable_shared_from_this<TcpConnection>
+	class TcpConnection : public Connection
 	{
 	public:
 		enum {
@@ -29,30 +28,26 @@ namespace saf
 		};
 
 	public: /// Thread-Safed Methods
-		TcpConnection(EventLoop* loop, Socket* socket, int index);
+		TcpConnection(EventLoop* loop,
+					  Socket* socket,
+					  const std::string& index,
+					  const InetAddress& addr);
 		~TcpConnection();
 
 		bool isConnected() const { return _status == kConnected; }
 		bool isDisconnected() const { return _status == kDisconnected; }
-
-		int getIndex() const { return _index; }
-		EventLoop* getLooper() const { return _loop; }
-
-		void send(const NetString& data);
-		void send(const char* data, size_t len);
 
 		void shutdown();
 		void forceClose();
 
 	protected:  /// Friend Methods
 		void changeStatus(int status);
-		void setObserver(ConnectionObserver* observer) { _observer = observer; }
 
 		friend class TcpServer;
 		friend class TcpClient;
 
 	protected:  /// Looper Thread Methods
-		void sendInLoop(const void* data, size_t len);
+		void sendInLoop(const char* data, size_t len);
 		ssize_t readInLoop();
 		ssize_t writeInLoop(const char* buffer, size_t length);
 
@@ -65,9 +60,6 @@ namespace saf
 		void onConnectDestroyedInLoop();
 
 	protected:
-		int _index;
-		EventLoop* _loop;
-		ConnectionObserver* _observer;
 		std::unique_ptr<Socket> _socket;
 		std::atomic_int _status;
 

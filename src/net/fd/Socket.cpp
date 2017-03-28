@@ -6,6 +6,7 @@
 #include <netinet/tcp.h>
 #include <fcntl.h>
 #include <iostream>
+#include <poll.h>
 
 #include "Socket.h"
 #include "net/EventLoop.h"
@@ -31,11 +32,12 @@ namespace saf
 		flags |= FD_CLOEXEC;
 		::fcntl(sockfd, F_SETFD, flags);
 
-		return new Socket(sockfd);
+		return new Socket(sockfd, protocal);
 	}
 
-	Socket::Socket(int fd):
-		IOFd(fd)
+	Socket::Socket(int fd, NetProtocal protocal):
+		IOFd(fd),
+		_protocal(protocal)
 	{
 
 	}

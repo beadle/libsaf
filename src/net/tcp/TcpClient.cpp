@@ -1,6 +1,7 @@
 //
 // Created by beadle on 3/24/17.
 //
+#include <iostream>
 
 #include "TcpClient.h"
 #include "TcpConnector.h"
@@ -13,12 +14,9 @@ namespace saf
 {
 	std::atomic_int gConnectionIndex(1000);
 
-	TcpClient::TcpClient(EventLoop* loop, const InetAddress &addr, float reconnectDelay) :
-		_loop(loop),
-		_reconnectDelay(reconnectDelay),
-		_connector(new TcpConnector(_loop, reconnectDelay)),
-		_addr(addr),
-		_connecting(false)
+	TcpClient::TcpClient(EventLoop* loop) :
+		Client(loop),
+		_connector(new TcpConnector(loop, this))
 	{
 
 	}
@@ -32,14 +30,15 @@ namespace saf
 			_connection->handleCloseInLoop();
 	}
 
-	void TcpClient::connect()
+	void TcpClient::connect(const InetAddress& addr)
 	{
 		if (_connecting)
 			return;
 		_connecting = true;
 
-		_loop->runInLoop([this]()
+		_loop->runInLoop([this, addr]()
 		{
+			_addr = addr;
 			_connector->setConnectedCallback(
 					std::bind(&TcpClient::newConnectionInLoop, this, std::placeholders::_1));
 			_connector->connect(_addr);
@@ -57,43 +56,27 @@ namespace saf
 		});
 	}
 
+	ConnectionPtr TcpClient::getConnection() const
+	{
+		return _connection;
+	}
+
 	void TcpClient::removeConnectionInLoop(const ConnectionPtr &conn)
 	{
 		_loop->assertInLoopThread();
 		assert(conn->getLooper() == _loop);
-		assert(conn == _connection);
+		assert(conn.get() == _connection.get());
 
+		notifyConnectionDestroyed(conn);
 		_connection.reset();
-		conn->onConnectDestroyedInLoop();
 	}
 
 	bool TcpClient::newConnectionInLoop(std::unique_ptr<Socket> &socket)
 	{
-		_connection.reset(
-				new TcpConnection(_loop, socket.release(), ++gConnectionIndex));
-		_connection->setObserver(this);
-		_connection->onConnectEstablishedInLoop();
+		_connection.reset(new TcpConnection(_loop, socket.release(), _addr.toIpPort(), _addr));
+		std::cout << "=================" << _connection->getAddress().toIpPort().c_str();
+		notifyConnectionEstablished(std::dynamic_pointer_cast<Connection>(_connection));
 		return true;
-	}
-
-	void TcpClient::onReceivedMessageInConnection(const ConnectionPtr& conn, Buffer* buffer)
-	{
-		if (_recvMessageCallback)
-			_recvMessageCallback(conn, buffer);
-		else
-			buffer->retrieveAll();
-	}
-
-	void TcpClient::onWriteCompletedInConnection(const ConnectionPtr& conn)
-	{
-		if (_writeCompleteCallback)
-			_writeCompleteCallback(conn);
-	}
-
-	void TcpClient::onConnectChangedInConnection(const ConnectionPtr& conn)
-	{
-		if (_connectChangeCallback)
-			_connectChangeCallback(conn);
 	}
 
 	void TcpClient::onClosedInConnection(const ConnectionPtr& conn)

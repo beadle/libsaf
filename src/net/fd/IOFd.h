@@ -50,7 +50,7 @@ namespace saf
 		void setStatus(Status status) { _status = status; }
 		void setREvent(int event) { _revents = event; }
 
-		void handleEvent();
+		virtual void handleEvent();
 
 	protected:
 		static const int kReadEvent;
@@ -58,7 +58,7 @@ namespace saf
 
 		void update();
 
-	private:
+	protected:
 		bool _handling;
 		int _events;
 		int _revents;

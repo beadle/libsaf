@@ -19,7 +19,7 @@ namespace saf
 		static Socket* create(NetProtocal protocal, sa_family_t family=AF_INET);
 
 	public:
-		Socket(int fd);
+		Socket(int fd, NetProtocal protocal);
 		~Socket();
 
 		void bind(const InetAddress& localAddr);
@@ -38,6 +38,9 @@ namespace saf
 		void setReusePort(bool on);
 		/// Enable/disable SO_KEEPALIVE
 		void setKeepAlive(bool on);
+
+	private:
+		NetProtocal _protocal;
 
 	};
 }
