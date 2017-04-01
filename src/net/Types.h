@@ -11,6 +11,7 @@
 
 namespace saf
 {
+	class IOFd;
 	class Buffer;
 	class Acceptor;
 	class Connection;
@@ -27,10 +28,10 @@ namespace saf
 	class IOFdObserver
 	{
 	public:
-		virtual void onReadInIOFd(IOFd*) = 0;
-		virtual void onWriteInIOFd(IOFd*) = 0;
-		virtual void onErrorInIOFd(IOFd*) = 0;
-		virtual void onCloseInIOFd(IOFd*) = 0;
+		virtual void onReadInIOFd(IOFd*) {};
+		virtual void onWriteInIOFd(IOFd*) {};
+		virtual void onErrorInIOFd(IOFd*) {};
+		virtual void onCloseInIOFd(IOFd*) {};
 	};
 
 }

@@ -29,14 +29,12 @@ namespace saf
 		_status(kConnecting),
 		_socket(socket)
 	{
-		_socket->setReadCallback(std::bind(&TcpConnection::handleReadInLoop, this));
-		_socket->setWriteCallback(std::bind(&TcpConnection::handleWriteInLoop, this));
-		_socket->setCloseCallback(std::bind(&TcpConnection::handleCloseInLoop, this));
-		_socket->setErrorCallback(std::bind(&TcpConnection::handleErrorInLoop, this));
+		_socket->setObserver(this);
 	}
 
 	TcpConnection::~TcpConnection()
 	{
+		_socket->setObserver(nullptr);
 		assert(_status == kDisconnected);
 	}
 
@@ -232,4 +230,25 @@ namespace saf
 		_socket->detachInLoop();
 		changeStatus(kDisconnected);
 	}
+
+	void TcpConnection::onReadInIOFd(IOFd*)
+	{
+		handleReadInLoop();
+	}
+
+	void TcpConnection::onWriteInIOFd(IOFd*)
+	{
+		handleWriteInLoop();
+	}
+
+	void TcpConnection::onErrorInIOFd(IOFd*)
+	{
+		handleErrorInLoop();
+	}
+
+	void TcpConnection::onCloseInIOFd(IOFd*)
+	{
+		handleCloseInLoop();
+	}
+
 }

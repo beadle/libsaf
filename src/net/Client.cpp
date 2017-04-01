@@ -13,31 +13,28 @@ namespace saf
 	Client::Client(EventLoop *loop) :
 		_loop(loop),
 		_reconnectDelay(0),
-		_connecting(false)
+		_connecting(false),
+		_recvMessageCallback(nullptr),
+		_connectChangeCallback(nullptr),
+		_writeCompleteCallback(nullptr)
 	{
 
 	}
 
-	void Client::bindDefaultCallbacks(Connection *ptr)
+	void Client::bindDefaultCallbacks(Connection *conn)
 	{
-		ptr->setRecvMessageCallback([this](const ConnectionPtr& conn, Buffer* buffer)
+		if (_recvMessageCallback)
+			conn->setRecvMessageCallback(_recvMessageCallback);
+
+		if (_writeCompleteCallback)
+			conn->setWriteCompleteCallback(_writeCompleteCallback);
+
+		if (_connectChangeCallback)
+			conn->setConnectChangeCallback(_connectChangeCallback);
+
+		conn->setCloseCallback([this](const ConnectionPtr& connPtr)
 		{
-			if (_recvMessageCallback)
-				_recvMessageCallback(conn, buffer);
-		});
-		ptr->setWriteCompleteCallback([this](const ConnectionPtr& conn)
-		{
-			if (_writeCompleteCallback)
-				_writeCompleteCallback(conn);
-		});
-		ptr->setConnectChangeCallback([this](const ConnectionPtr& conn)
-		{
-			if (_connectChangeCallback)
-				_connectChangeCallback(conn);
-		});
-		ptr->setCloseCallback([this](const ConnectionPtr& conn)
-		{
-			this->onClosedInConnection(conn);
+			this->onClosedInConnection(connPtr);
 		});
 	}
 

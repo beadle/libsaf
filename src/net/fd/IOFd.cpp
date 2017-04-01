@@ -5,6 +5,7 @@
 #include <poll.h>
 
 #include "IOFd.h"
+#include "base/Macros.h"
 #include "net/EventLoop.h"
 
 
@@ -84,25 +85,63 @@ namespace saf
 	void IOFd::handleEvent()
 	{
 		_handling = true;
+
 		if ((_revents & POLLHUP) && !(_revents & POLLIN))
 		{
-			if (_closeCallback) _closeCallback();
-			goto end;
-		}
-		if (_revents & (POLLERR | POLLNVAL))
-		{
-			if (_errorCallback) _errorCallback();
-		}
-		if (_revents & (POLLIN | POLLPRI | POLLRDHUP))
-		{
-			if (_readCallback) _readCallback();
-		}
-		if (_revents & POLLOUT)
-		{
-			if (_writeCallback) _writeCallback();
+			if (LIKELY(_observer))
+			{
+				_observer->onCloseInIOFd(this);
+			}
+			else
+			{
+				if (_closeCallback)
+					_closeCallback();
+			}
+
+			_handling = false;
+			_revents = 0;
+			return;
 		}
 
-		end:
+		if (_revents & (POLLERR | POLLNVAL))
+		{
+			if (LIKELY(_observer))
+			{
+				_observer->onErrorInIOFd(this);
+			}
+			else
+			{
+				if (_errorCallback)
+					_errorCallback();
+			}
+		}
+
+		if (_revents & (POLLIN | POLLPRI | POLLRDHUP))
+		{
+			if (LIKELY(_observer))
+			{
+				_observer->onReadInIOFd(this);
+			}
+			else
+			{
+				if (_readCallback)
+					_readCallback();
+			}
+		}
+
+		if (_revents & POLLOUT)
+		{
+			if (LIKELY(_observer))
+			{
+				_observer->onWriteInIOFd(this);
+			}
+			else
+			{
+				if (_writeCallback)
+					_writeCallback();
+			}
+		}
+
 		_handling = false;
 		_revents = 0;
 	}

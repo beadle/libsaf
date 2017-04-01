@@ -8,6 +8,7 @@
 
 #include "TcpConnection.h"
 #include "net/EventLoop.h"
+#include "net/fd/Socket.h"
 
 
 namespace saf
@@ -77,7 +78,9 @@ namespace saf
 
 	bool TcpClient::newConnectionInLoop(std::unique_ptr<Socket> &socket)
 	{
+		socket->setObserver(nullptr);
 		_connection.reset(new TcpConnection(_loop, socket.release(), _addr.toIpPort(), _addr));
+
 		notifyConnectionEstablished(std::dynamic_pointer_cast<Connection>(_connection));
 		return true;
 	}

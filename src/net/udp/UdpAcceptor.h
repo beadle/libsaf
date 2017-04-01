@@ -10,20 +10,28 @@
 #include "net/Buffer.h"
 #include "net/InetAddress.h"
 #include "net/Acceptor.h"
+#include "net/Types.h"
 
 
 namespace saf
 {
+	class IOFd;
 	class Socket;
 	class EventLoop;
 
-	class UdpAcceptor : public Acceptor
+	class UdpAcceptor : public Acceptor, public IOFdObserver
 	{
 	protected:
 		typedef std::function<void(InetAddress&, Buffer*)> ReceMessageCallback;
 
 	public:
 		~UdpAcceptor();
+
+	public:  /// IOFdObserber Methods
+		void onReadInIOFd(IOFd*);
+		void onWriteInIOFd(IOFd*);
+		void onErrorInIOFd(IOFd*);
+		void onCloseInIOFd(IOFd*);
 
 	protected:
 		UdpAcceptor(EventLoop *loop);

@@ -39,6 +39,9 @@ namespace saf
 		void attachInLoop(EventLoop *looper);
 		bool detachInLoop();
 
+		void setObserver(IOFdObserver* observer)
+		{ _observer = observer; }
+
 	public:  /// Exposed To Pollers Only
 		IOFd(int fd);
 		virtual ~IOFd();

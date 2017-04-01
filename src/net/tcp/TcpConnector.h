@@ -18,7 +18,7 @@ namespace saf
 	class Socket;
 	class EventLoop;
 
-	class TcpConnector : public std::enable_shared_from_this<TcpConnector>
+	class TcpConnector : public IOFdObserver, public std::enable_shared_from_this<TcpConnector>
 	{
 	protected:
 		typedef std::function<bool(std::unique_ptr<Socket>&)> ConnectedCallback;
@@ -27,6 +27,12 @@ namespace saf
 		~TcpConnector();
 
 		Socket* getSocket() { return _socket.get(); }
+
+	public:  /// IOFdObserber Methods
+		void onReadInIOFd(IOFd*);
+		void onWriteInIOFd(IOFd*);
+		void onErrorInIOFd(IOFd*);
+		void onCloseInIOFd(IOFd*);
 
 	protected:
 		TcpConnector(EventLoop* loop, Client* master);

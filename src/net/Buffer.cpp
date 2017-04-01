@@ -9,19 +9,22 @@
 
 namespace saf
 {
+	const size_t gExtraBufferLen = 65536;
+	char gExtraBuffer[gExtraBufferLen] = "";
+
 	ssize_t Buffer::readFd(int fd)
 	{
 		// saved an ioctl()/FIONREAD call to tell how much to read
-		char extrabuf[65536];
+		// char extrabuf[65536];
 		struct iovec vec[2];
 		const size_t writable = writableBytes();
 		vec[0].iov_base = begin() + _writerIndex;
 		vec[0].iov_len = writable;
-		vec[1].iov_base = extrabuf;
-		vec[1].iov_len = sizeof extrabuf;
+		vec[1].iov_base = gExtraBuffer;
+		vec[1].iov_len = gExtraBufferLen;
 		// when there is enough space in this buffer, don't read into extrabuf.
 		// when extrabuf is used, we read 128k-1 bytes at most.
-		const int iovcnt = (writable < sizeof extrabuf) ? 2 : 1;
+		const int iovcnt = (writable < gExtraBufferLen) ? 2 : 1;
 		const ssize_t n = ::readv(fd, vec, iovcnt);
 		if (n < 0)
 		{
@@ -34,7 +37,7 @@ namespace saf
 		else
 		{
 			_writerIndex = _buffer.size();
-			append(extrabuf, n - writable);
+			append(gExtraBuffer, n - writable);
 		}
 		return n;
 	}

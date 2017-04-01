@@ -5,6 +5,8 @@
 #ifndef EXAMPLE_CURRENTTHREAD_H
 #define EXAMPLE_CURRENTTHREAD_H
 
+#include "Macros.h"
+
 namespace saf
 {
 	namespace CurrentThread
@@ -15,7 +17,7 @@ namespace saf
 
 		inline int tid()
 		{
-			if (__builtin_expect(t_cachedTid == 0, 0))
+			if (UNLIKELY(t_cachedTid == 0))
 			{
 				cacheTid();
 			}

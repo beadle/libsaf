@@ -35,10 +35,11 @@ namespace saf
 		_socket->attachInLoop(_loop);
 		_socket->setReuseAddr(true);
 		_socket->setReusePort(reusePort);
-		_socket->setReadCallback(std::bind(&UdpAcceptor::handleReadInLoop, this));
-		_socket->setWriteCallback(std::bind(&UdpAcceptor::handleWriteInLoop, this));
-		_socket->setErrorCallback(std::bind(&UdpAcceptor::handleErrorInLoop, this));
-		_socket->setCloseCallback(std::bind(&UdpAcceptor::handleCloseInLoop, this));
+		_socket->setObserver(this);
+//		_socket->setReadCallback(std::bind(&UdpAcceptor::handleReadInLoop, this));
+//		_socket->setWriteCallback(std::bind(&UdpAcceptor::handleWriteInLoop, this));
+//		_socket->setErrorCallback(std::bind(&UdpAcceptor::handleErrorInLoop, this));
+//		_socket->setCloseCallback(std::bind(&UdpAcceptor::handleCloseInLoop, this));
 		_socket->bind(_addr);
 		_socket->enableReadInLoop();
 	}
@@ -83,6 +84,26 @@ namespace saf
 
 		int err = _socket->getSocketError();
 		LOG_ERROR("TcpConnection::handleErrorInLoop - SO_ERROR(%d): %s", err, errnoToString(err));
+	}
+
+	void UdpAcceptor::onReadInIOFd(IOFd*)
+	{
+		handleReadInLoop();
+	}
+
+	void UdpAcceptor::onWriteInIOFd(IOFd*)
+	{
+		handleWriteInLoop();
+	}
+
+	void UdpAcceptor::onErrorInIOFd(IOFd*)
+	{
+		handleErrorInLoop();
+	}
+
+	void UdpAcceptor::onCloseInIOFd(IOFd*)
+	{
+		handleCloseInLoop();
 	}
 
 }

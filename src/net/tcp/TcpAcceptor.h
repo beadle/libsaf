@@ -20,13 +20,16 @@ namespace saf
 	class EventLoop;
 	class InetAddress;
 
-	class TcpAcceptor : public Acceptor
+	class TcpAcceptor : public Acceptor, public IOFdObserver
 	{
 	protected:
 		typedef std::function<void(int, const InetAddress&)> AcceptCallback;
 
 	public:
 		~TcpAcceptor();
+
+	public:  /// IOFdObserber Methods
+		void onReadInIOFd(IOFd*);
 
 	protected:
 		TcpAcceptor(EventLoop *loop);

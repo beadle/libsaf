@@ -177,6 +177,7 @@ namespace saf
 
 	void EventLoop::handleWakeupRead()
 	{
+		LOG_WARN("bad handle wakeup.!!!!!!!!!!")
 		uint64_t one = 1;
 		ssize_t n = ::read(_wakeupFd->getFd(), &one, sizeof one);
 		if (n != 8)

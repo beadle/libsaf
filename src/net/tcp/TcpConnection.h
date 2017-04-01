@@ -8,16 +8,18 @@
 #include <atomic>
 #include <memory>
 
+#include "net/Types.h"
 #include "net/Buffer.h"
 #include "net/Connection.h"
 
 
 namespace saf
 {
+	class IOFd;
 	class Socket;
 	class EventLoop;
 
-	class TcpConnection : public Connection
+	class TcpConnection : public Connection, public IOFdObserver
 	{
 	public:
 		enum {
@@ -39,6 +41,12 @@ namespace saf
 
 		void shutdown();
 		void forceClose();
+
+	public:  /// IOFdObserber Methods
+		void onReadInIOFd(IOFd*);
+		void onWriteInIOFd(IOFd*);
+		void onErrorInIOFd(IOFd*);
+		void onCloseInIOFd(IOFd*);
 
 	protected:  /// Friend Methods
 		void changeStatus(int status);

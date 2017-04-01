@@ -37,10 +37,11 @@ namespace saf
 		_addr = addr;
 		_socket.reset(Socket::create(NetProtocal::TCP, _addr.getFamily()));
 
-		_socket->attachInLoop(_loop);
 		_socket->setReuseAddr(true);
 		_socket->setReusePort(reusePort);
-		_socket->setReadCallback(std::bind(&TcpAcceptor::handleReadInLoop, this));
+		_socket->setObserver(this);
+
+		_socket->attachInLoop(_loop);
 		_socket->bind(_addr);
 		_socket->enableReadInLoop();
 		_socket->listen();
@@ -57,6 +58,11 @@ namespace saf
 			_socket->detachInLoop();
 			_socket.reset();
 		}
+	}
+
+	void TcpAcceptor::onReadInIOFd(IOFd *)
+	{
+		handleReadInLoop();
 	}
 
 	void TcpAcceptor::handleReadInLoop()

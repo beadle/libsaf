@@ -48,7 +48,7 @@ namespace saf
 		size_t writableBytes() const { return _buffer.size() - _writerIndex; }
 		size_t prependableBytes() const { return _readerIndex; }
 
-		void retrieve(size_t len)
+		inline void retrieve(size_t len)
 		{
 			assert(len <= readableBytes());
 			if (len < readableBytes())
@@ -61,7 +61,7 @@ namespace saf
 			}
 		}
 
-		void retrieveAll()
+		inline void retrieveAll()
 		{
 			_readerIndex = kCheapPrepend;
 			_writerIndex = kCheapPrepend;
@@ -88,7 +88,9 @@ namespace saf
 
 		NetString retrieveAllAsNetString()
 		{
-			return retrieveAsNetString(readableBytes());
+			NetString str(peek(), readableBytes());
+			retrieveAll();
+			return str;
 		}
 
 		NetString retrieveAsNetString(size_t len)
@@ -167,7 +169,7 @@ namespace saf
 			append(&x, sizeof x);
 		}
 
-		const char* peek() const { return begin() + _readerIndex; }
+		inline const char* peek() const { return begin() + _readerIndex; }
 
 		int64_t peekInt64() const
 		{
@@ -216,10 +218,10 @@ namespace saf
 		ssize_t readFrom(int fd, InetAddress& addr);
 
 	protected:
-		char* begin() { return &*_buffer.begin(); }
-		const char* begin() const { return &*_buffer.begin(); }
-		char* beginWrite() { return begin() + _writerIndex; }
-		const char* beginWrite() const { return begin() + _writerIndex; }
+		inline char* begin() { return &*_buffer.begin(); }
+		inline const char* begin() const { return &*_buffer.begin(); }
+		inline char* beginWrite() { return begin() + _writerIndex; }
+		inline const char* beginWrite() const { return begin() + _writerIndex; }
 
 		void ensureWritableBytes(size_t len)
 		{

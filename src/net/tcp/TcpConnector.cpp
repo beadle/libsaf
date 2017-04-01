@@ -100,10 +100,11 @@ namespace saf
 	{
 		changeStatus(kConnecting);
 
-		_socket->setReadCallback(nullptr);
-		_socket->setWriteCallback(std::bind(&TcpConnector::handleWriteInLoop, this));
-		_socket->setErrorCallback(std::bind(&TcpConnector::handleErrorInLoop, this));
-		_socket->setCloseCallback(std::bind(&TcpConnector::handleCloseInLoop, this));
+//		_socket->setReadCallback(nullptr);
+//		_socket->setWriteCallback(std::bind(&TcpConnector::handleWriteInLoop, this));
+//		_socket->setErrorCallback(std::bind(&TcpConnector::handleErrorInLoop, this));
+//		_socket->setCloseCallback(std::bind(&TcpConnector::handleCloseInLoop, this));
+		_socket->setObserver(this);
 		_socket->attachInLoop(_loop);
 		_socket->enableWriteInLoop();
 	}
@@ -179,5 +180,25 @@ namespace saf
 			_socket->detachInLoop();
 			_socket.reset();
 		}
+	}
+
+	void TcpConnector::onReadInIOFd(IOFd*)
+	{
+
+	}
+
+	void TcpConnector::onWriteInIOFd(IOFd*)
+	{
+		handleWriteInLoop();
+	}
+
+	void TcpConnector::onErrorInIOFd(IOFd*)
+	{
+		handleErrorInLoop();
+	}
+
+	void TcpConnector::onCloseInIOFd(IOFd*)
+	{
+		handleCloseInLoop();
 	}
 }

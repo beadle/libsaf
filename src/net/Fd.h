@@ -15,7 +15,7 @@ namespace saf
 		Fd(int fd) : _fd(fd) {}
 		virtual ~Fd() {}
 
-		int getFd() const { return _fd; }
+		inline int getFd() const { return _fd; }
 
 	private:
 		int _fd;
