@@ -34,8 +34,12 @@ namespace saf
 
 	TcpConnection::~TcpConnection()
 	{
-		_socket->setObserver(nullptr);
 		assert(_status == kDisconnected);
+		if (_socket)
+		{
+			_socket->setObserver(nullptr);
+			delete _socket;
+		}
 	}
 
 	void TcpConnection::setTcpNoDelay(bool on)

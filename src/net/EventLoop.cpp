@@ -207,6 +207,8 @@ namespace saf
 		std::vector<Functor> functors;
 		{
 			std::lock_guard<std::mutex> guard(_mutex);
+			if (_functors.empty())
+				return;
 			functors.swap(_functors);
 		}
 

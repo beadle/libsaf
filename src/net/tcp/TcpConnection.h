@@ -68,7 +68,7 @@ namespace saf
 		void onConnectDestroyedInLoop();
 
 	protected:
-		std::unique_ptr<Socket> _socket;
+		Socket* _socket;
 		std::atomic_int _status;
 
 		Buffer _inputBuffer;

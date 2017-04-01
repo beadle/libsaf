@@ -88,11 +88,12 @@ namespace saf
 		int numEvents = ::epoll_wait(_fd, &*_events.begin(), static_cast<int>(_events.size()), timeoutMs);
 		if (numEvents > 0)
 		{
+			activeFds.resize(static_cast<size_t >(numEvents));
 			for (int i = 0; i < numEvents; ++i)
 			{
 				IOFd* watcher = static_cast<IOFd*>(_events[i].data.ptr);
 				watcher->setREvent(_events[i].events);
-				activeFds.push_back(watcher);
+				activeFds[i] = watcher;
 			}
 
 			if (static_cast<size_t>(numEvents) == _events.size())
