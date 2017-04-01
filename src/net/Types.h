@@ -24,6 +24,15 @@ namespace saf
 
 	enum class NetProtocal { TCP, UDP, KCP, };
 
+	class IOFdObserver
+	{
+	public:
+		virtual void onReadInIOFd(IOFd*) = 0;
+		virtual void onWriteInIOFd(IOFd*) = 0;
+		virtual void onErrorInIOFd(IOFd*) = 0;
+		virtual void onCloseInIOFd(IOFd*) = 0;
+	};
+
 }
 
 

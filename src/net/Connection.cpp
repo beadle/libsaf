@@ -15,7 +15,11 @@ namespace saf
 		_loop(loop),
 		_index(key),
 		_addr(addr),
-		_activedTime(time::timestamp())
+		_activedTime(time::timestamp()),
+		_recvMessageCallback(nullptr),
+		_writeCompleteCallback(nullptr),
+		_connectChangeCallback(nullptr),
+		_closeCallback(nullptr)
 	{
 
 	}

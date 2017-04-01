@@ -35,7 +35,10 @@ namespace saf
 		void runInLoop(Functor&& functor);
 		void queueInLoop(Functor&& functor);
 
-		int addTimer(float delay, const Functor& callback, bool repeated=false);
+		void runInLoop(const Functor& functor);
+		void queueInLoop(const Functor& functor);
+
+		int addTimer(float delay, Functor&& callback, bool repeated=false);
 		void cancelTimer(int fd);
 
 		bool isInLoopThread() { return _threadId == CurrentThread::tid(); }
@@ -56,9 +59,9 @@ namespace saf
 	private:
 		const pid_t _threadId;
 
-		std::atomic_bool _quit;
-		std::atomic_bool _looping;
-		std::atomic_bool _handling;
+		bool _quit;
+		bool _looping;
+		bool _handling;
 
 		IOFd* _currentFd;
 

@@ -10,6 +10,8 @@
 #include <thread>
 #include <atomic>
 
+#include "base/CountDownLatch.h"
+
 
 namespace saf
 {
@@ -21,7 +23,7 @@ namespace saf
 		class Pair
 		{
 		public:
-			Pair();
+			Pair(EventLoopCluster* master);
 			~Pair();
 
 			EventLoop* getLoop() const { return _loop.get(); }
@@ -33,20 +35,27 @@ namespace saf
 			void work();
 
 		private:
+			EventLoopCluster* _master;
 			std::unique_ptr<EventLoop> _loop;
 			std::unique_ptr<std::thread> _thread;
 		};
 
 	public:
-		EventLoopCluster();
+		EventLoopCluster(EventLoop* master);
 
 		void start(size_t count);
 		void stop();
 
 		EventLoop* getNextLoop();
 
+	protected:
+		void onReady(Pair* pair);
+
 	private:
+		EventLoop* _master;
+		size_t _threadCount;
 		std::atomic_int _counter;
+		std::unique_ptr<CountDownLatch> _latch;
 		std::vector<std::unique_ptr<Pair> > _pairs;
 	};
 

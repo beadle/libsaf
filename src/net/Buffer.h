@@ -86,7 +86,7 @@ namespace saf
 			return result;
 		}
 
-		NetString retrieveAsNetString()
+		NetString retrieveAllAsNetString()
 		{
 			return retrieveAsNetString(readableBytes());
 		}

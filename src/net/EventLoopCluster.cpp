@@ -10,7 +10,8 @@
 
 namespace saf
 {
-	EventLoopCluster::Pair::Pair() :
+	EventLoopCluster::Pair::Pair(EventLoopCluster* master) :
+		_master(master),
 		_loop(nullptr),
 		_thread(nullptr)
 	{
@@ -43,25 +44,37 @@ namespace saf
 	{
 		assert(!_loop);
 		_loop.reset(new EventLoop());
+		_master->onReady(this);
+
 		_loop->start();
+
 		_loop.reset();
 	}
 
 
-	EventLoopCluster::EventLoopCluster() :
-		_counter(0)
+	EventLoopCluster::EventLoopCluster(EventLoop* master) :
+		_counter(0),
+		_master(master),
+		_threadCount(1),
+		_latch(nullptr)
 	{
 
 	}
 
 	void EventLoopCluster::start(size_t count)
 	{
+		_threadCount = count;
 		_pairs.clear();
 
-		for (size_t i=0; i<count; ++i)
+		if (_threadCount > 1)
 		{
-			_pairs.emplace_back(new Pair());
-			_pairs.back()->start();
+			_latch.reset(new CountDownLatch(static_cast<int>(count)));
+			for (size_t i=0; i<count; ++i)
+			{
+				_pairs.emplace_back(new Pair(this));
+				_pairs.back()->start();
+			}
+			_latch->wait();
 		}
 	}
 
@@ -75,9 +88,17 @@ namespace saf
 
 	EventLoop* EventLoopCluster::getNextLoop()
 	{
+		if (_threadCount <= 1)
+			return _master;
+
 		assert(!_pairs.empty());
 
 		auto index = ++_counter % _pairs.size();
 		return _pairs[index]->getLoop();
+	}
+
+	void EventLoopCluster::onReady(Pair *pair)
+	{
+		_latch->countDown();
 	}
 }

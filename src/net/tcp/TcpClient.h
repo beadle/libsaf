@@ -27,6 +27,9 @@ namespace saf
 		~TcpClient();
 
 	public:  /// Thread-Safed Methods
+		bool isConnected() const;
+		TcpConnector* getConnector() const { return _connector.get(); }
+
 		void connect(const InetAddress&);
 		void disconnect();
 

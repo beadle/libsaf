@@ -16,7 +16,7 @@ namespace saf
 	class Timer : public Fd
 	{
 	protected:
-		Timer(int fd, long interval, const TimerCallback& callback);
+		Timer(int fd, long interval, TimerCallback&& callback);
 
 		void handleTimeout();
 

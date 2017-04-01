@@ -23,11 +23,12 @@ namespace saf
 
 	TcpClient::~TcpClient()
 	{
-		_connector->disconnect();
 		_connector.reset();
+	}
 
-		if (_connection)
-			_connection->handleCloseInLoop();
+	bool TcpClient::isConnected() const
+	{
+		return _connection && _connection->isConnected();
 	}
 
 	void TcpClient::connect(const InetAddress& addr)
@@ -51,8 +52,11 @@ namespace saf
 
 		_loop->runInLoop([this]()
 		{
-			_connector->disconnect();
-			_connection->handleCloseInLoop();
+			if (_connector)
+				_connector->disconnect();
+
+			if (_connection && _connection->isConnected())
+				_connection->handleCloseInLoop();
 		});
 	}
 
@@ -74,7 +78,6 @@ namespace saf
 	bool TcpClient::newConnectionInLoop(std::unique_ptr<Socket> &socket)
 	{
 		_connection.reset(new TcpConnection(_loop, socket.release(), _addr.toIpPort(), _addr));
-		std::cout << "=================" << _connection->getAddress().toIpPort().c_str();
 		notifyConnectionEstablished(std::dynamic_pointer_cast<Connection>(_connection));
 		return true;
 	}

@@ -3,6 +3,7 @@
 //
 #include <assert.h>
 #include <unistd.h>
+#include <iostream>
 
 #include "TcpConnector.h"
 #include "TcpClient.h"

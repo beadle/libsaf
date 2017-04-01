@@ -17,6 +17,7 @@ namespace saf
 		Fd(fd),
 		_looper(nullptr),
 		_handling(false),
+		_events(0),
 		_revents(0),
 		_status(Status::NEW)
 	{

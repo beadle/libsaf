@@ -75,6 +75,8 @@ namespace saf
 		explicit AsyncLogger(const std::string& path, float flushInterval=0.25);
 		~AsyncLogger();
 
+		void setPath(const std::string path);
+
 		void append(const char* line, size_t len);
 		void start();
 		void stop();

@@ -94,6 +94,8 @@ namespace saf
 	{
 		_loop->assertInLoopThread();
 
+		_connecting = true;
+
 		if (_connectChangeCallback)
 			_connectChangeCallback(shared_from_this());
 	}
@@ -101,6 +103,8 @@ namespace saf
 	void UdpConnection::onConnectDestroyedInLoop()
 	{
 		_loop->assertInLoopThread();
+
+		_connecting = false;
 
 		if (_connectChangeCallback)
 			_connectChangeCallback(shared_from_this());

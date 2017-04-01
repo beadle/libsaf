@@ -5,8 +5,8 @@
 #ifndef LIBSAF_WATCHER_H
 #define LIBSAF_WATCHER_H
 
-#include "../Fd.h"
-#include <functional>
+#include "net/Fd.h"
+#include "net/Types.h"
 
 namespace saf
 {
@@ -20,14 +20,14 @@ namespace saf
 		enum class Status { NEW, ADDED, DELETED, };
 
 	public: /// Thread-Safed Methods
-		void setReadCallback(const EventCallback& cb) { _readCallback = std::move(cb); }
-		void setWriteCallback(const EventCallback& cb) { _writeCallback = std::move(cb); }
-		void setCloseCallback(const EventCallback& cb) { _closeCallback = std::move(cb); }
-		void setErrorCallback(const EventCallback& cb) { _errorCallback = std::move(cb); }
+		void setReadCallback(EventCallback&& cb) { _readCallback = std::move(cb); }
+		void setWriteCallback(EventCallback&& cb) { _writeCallback = std::move(cb); }
+		void setCloseCallback(EventCallback&& cb) { _closeCallback = std::move(cb); }
+		void setErrorCallback(EventCallback&& cb) { _errorCallback = std::move(cb); }
 
-		bool isReading() const { return bool(_events & kReadEvent); }
-		bool isWriting() const { return bool(_events & kWriteEvent); }
-		bool isNoneEvent() const { return !_events; }
+		inline bool isReading() const { return bool(_events & kReadEvent); }
+		inline bool isWriting() const { return bool(_events & kWriteEvent); }
+		inline bool isNoneEvent() const { return !_events; }
 
 	public:  /// Looper Thread Methods
 		void enableReadInLoop();
@@ -43,12 +43,12 @@ namespace saf
 		IOFd(int fd);
 		virtual ~IOFd();
 
-		int getEvents() const { return _events; }
-		Status getStatus() const { return _status; }
-		EventLoop* getLooper() const { return _looper; }
+		inline int getEvents() const { return _events; }
+		inline Status getStatus() const { return _status; }
+		inline EventLoop* getLooper() const { return _looper; }
 
 		void setStatus(Status status) { _status = status; }
-		void setREvent(int event) { _revents = event; }
+		inline void setREvent(int event) { _revents = event; }
 
 		virtual void handleEvent();
 
@@ -64,6 +64,7 @@ namespace saf
 		int _revents;
 		Status _status;
 		EventLoop* _looper;
+		IOFdObserver* _observer;
 
 		EventCallback _readCallback;
 		EventCallback _writeCallback;

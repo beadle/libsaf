@@ -20,9 +20,9 @@ namespace saf
 	{
 	}
 
-	Timer* TimerQueue::createTimer(float delay, const TimerCallback &callback, bool repeated)
+	Timer* TimerQueue::createTimer(float delay, TimerCallback&& callback, bool repeated)
 	{
-		Timer* ptr(new Timer(--_counter, (long)(delay * 1000), callback));
+		Timer* ptr(new Timer(--_counter, (long)(delay * 1000), std::move(callback)));
 		ptr->setRepeated(repeated);
 		return ptr;
 	}

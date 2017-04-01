@@ -28,6 +28,8 @@ namespace saf
 			"FATAL -",
 		};
 
+		LogLevel gLogLevel = LogLevel::DEBUG;
+
 		const size_t kMaxNumericSize = 32;
 		const char digits[] = "0123456789";
 		__thread char errorBuffer[512];
@@ -96,6 +98,9 @@ namespace saf
 
 	void log(LogLevel level, const char* file, int line, const char* function, int error, const char* format, ...)
 	{
+		if (level < gLogLevel)
+			return;
+
 		static __thread FixedBuffer<128*1024> buffer;
 		static __thread char content[1024] = "";
 		buffer.reset();
@@ -106,7 +111,7 @@ namespace saf
 		{
 			appendString(buffer, " ", 1);
 			appendString(buffer, errnoToString(error));
-			appendString(buffer, "errno(", 6);
+			appendString(buffer, " errno(", 7);
 			appendInteger(buffer, error);
 			appendString(buffer, ") -", 3);
 		}
@@ -137,13 +142,20 @@ namespace saf
 			::abort();
 	}
 
+	void setLogLevel(LogLevel level)
+	{
+		gLogLevel = level;
+	}
+
 	const char* errnoToString(int error)
 	{
 		return strerror_r(error, errorBuffer, sizeof errorBuffer);
 	}
 
-	LoggerLauncher::LoggerLauncher()
+	LoggerLauncher::LoggerLauncher(const char* path, LogLevel level)
 	{
+		setLogLevel(level);
+		gLogger.setPath(path);
 		gLogger.start();
 	}
 

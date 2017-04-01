@@ -24,6 +24,9 @@ namespace saf
 	public: /// Thread-Safed Methods
 		~UdpConnection();
 
+		bool isConnected() const { return _connecting; }
+		void setTcpNoDelay(bool on) {}
+
 	protected:  /// Looper Thread Methods
 		UdpConnection(EventLoop* loop,
 					  const std::string& key,
@@ -41,6 +44,7 @@ namespace saf
 		friend class UdpServer;
 
 	private:
+		bool _connecting;
 		bool _writing;
 		int _senderFd;
 

@@ -20,11 +20,11 @@ namespace saf
 	public:
 		virtual ~Poller() {};
 
-		virtual std::vector<IOFd*> poll(int timeoutMs) = 0;
+		virtual void poll(int timeoutMs, std::vector<IOFd*>& activeFds) = 0;
 
-		virtual bool hasFd(IOFd *watcher) = 0;
-		virtual void updateFd(IOFd *watcher) = 0;
-		virtual void removeFd(IOFd *watcher) = 0;
+		virtual bool hasFd(IOFd *fd) = 0;
+		virtual void updateFd(IOFd *fd) = 0;
+		virtual void removeFd(IOFd *fd) = 0;
 	};
 
 }

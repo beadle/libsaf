@@ -40,6 +40,11 @@ namespace saf
 		assert(_status == kDisconnected);
 	}
 
+	void TcpConnection::setTcpNoDelay(bool on)
+	{
+		_socket->setTcpNoDelay(on);
+	}
+
 	void TcpConnection::forceClose()
 	{
 		if (_status != kConnected)
@@ -73,8 +78,46 @@ namespace saf
 	{
 		_loop->assertInLoopThread();
 
-		_socket->enableWriteInLoop();
-		_outputBuffer.append(data, len);
+		ssize_t nwrote = 0;
+		size_t remaining = len;
+		bool faultError = false;
+
+		if (!_socket->isWriting() && !_outputBuffer.readableBytes())
+		{
+			nwrote = writeInLoop(data, len);
+			if (nwrote >= 0)
+			{
+				remaining = len - nwrote;
+				if (!remaining)
+				{
+					if (_writeCompleteCallback)
+						_loop->queueInLoop(std::bind(_writeCompleteCallback, shared_from_this()));
+					return;
+				}
+			}
+			else
+			{
+				nwrote = 0;
+				if (errno != EWOULDBLOCK)
+				{
+					LOG_ERROR("TcpConnection::sendInLoop");
+					if (errno == EPIPE || errno == ECONNRESET) // FIXME: any others?
+					{
+						faultError = true;
+					}
+				}
+			}
+		}
+
+		assert(remaining <= len);
+		if (!faultError && remaining > 0)
+		{
+			_outputBuffer.append(data + nwrote, remaining);
+			if (!_socket->isWriting())
+			{
+				_socket->enableWriteInLoop();
+			}
+		}
 	}
 
 	void TcpConnection::changeStatus(int status)
@@ -134,6 +177,7 @@ namespace saf
 			else
 			{
 				LOG_ERROR("TcpConnection::handleWriteInLoop")
+				_socket->disableWriteInLoop();
 			}
 		}
 		else

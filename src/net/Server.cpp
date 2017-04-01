@@ -15,7 +15,10 @@ namespace saf
 	Server::Server(EventLoop *loop) :
 		_running(false),
 		_loop(loop),
-		_cluster(new EventLoopCluster())
+		_cluster(new EventLoopCluster(_loop)),
+		_recvMessageCallback(nullptr),
+		_connectChangeCallback(nullptr),
+		_writeCompleteCallback(nullptr)
 	{
 
 	}
@@ -27,21 +30,15 @@ namespace saf
 
 	void Server::bindDefaultCallbacks(Connection* conn)
 	{
-		conn->setRecvMessageCallback([this](const ConnectionPtr& connPtr, Buffer* buffer)
-		{
-			if (_recvMessageCallback)
-				_recvMessageCallback(connPtr, buffer);
-		});
-		conn->setWriteCompleteCallback([this](const ConnectionPtr& connPtr)
-		{
-			if (_writeCompleteCallback)
-				_writeCompleteCallback(connPtr);
-		});
-		conn->setConnectChangeCallback([this](const ConnectionPtr& connPtr)
-		{
-			if (_connectChangeCallback)
-				_connectChangeCallback(connPtr);
-		});
+		if (_recvMessageCallback)
+			conn->setRecvMessageCallback(_recvMessageCallback);
+
+		if (_writeCompleteCallback)
+			conn->setWriteCompleteCallback(_writeCompleteCallback);
+
+		if (_connectChangeCallback)
+			conn->setConnectChangeCallback(_connectChangeCallback);
+
 		conn->setCloseCallback([this](const ConnectionPtr& connPtr)
 		{
 			this->onClosedInConnection(connPtr);

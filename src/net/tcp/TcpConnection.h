@@ -35,7 +35,7 @@ namespace saf
 		~TcpConnection();
 
 		bool isConnected() const { return _status == kConnected; }
-		bool isDisconnected() const { return _status == kDisconnected; }
+		void setTcpNoDelay(bool on);
 
 		void shutdown();
 		void forceClose();

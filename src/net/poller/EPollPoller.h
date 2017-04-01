@@ -21,7 +21,7 @@ namespace saf
 		EPollPoller();
 		~EPollPoller();
 
-		std::vector<IOFd*> poll(int timeoutMs);
+		void poll(int timeoutMs, std::vector<IOFd*>& activeFds);
 
 		void updateFd(IOFd *watcher) override;
 		void removeFd(IOFd *watcher) override;

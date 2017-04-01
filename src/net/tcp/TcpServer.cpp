@@ -26,6 +26,8 @@ namespace saf
 	TcpServer::~TcpServer()
 	{
 		assert(!_running);
+		_cluster->stop();
+
 		LOG_INFO("TcpServer(%p) was destroied", this);
 	}
 
@@ -38,8 +40,6 @@ namespace saf
 		_loop->runInLoop([this, threadCount, addr]()
 		{
 			_cluster->start(threadCount);
-
-			_acceptor.reset(new TcpAcceptor(_loop));
 			_acceptor->setAcceptCallback(
 					std::bind(&TcpServer::newConnectionInLoop, this, std::placeholders::_1, std::placeholders::_2));
 			_acceptor->listenInLoop(addr, true);
@@ -54,7 +54,6 @@ namespace saf
 
 		_loop->runInLoop([this]()
 		{
-			_cluster->stop();
 			_acceptor->setAcceptCallback(nullptr);
 			_acceptor->stopInLoop();
 

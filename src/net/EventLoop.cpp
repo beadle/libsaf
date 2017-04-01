@@ -79,16 +79,18 @@ namespace saf
 		_quit = false;
 		_looping = true;
 
+		std::vector<IOFd*> activeFds;
+
 		while (!_quit)
 		{
-			auto fds = _poller->poll(kPollTimeMs);
 			_handling = true;
-			auto activeFds = _poller->poll(kPollTimeMs);
+			_poller->poll(kPollTimeMs, activeFds);
 			for (auto fd : activeFds)
 			{
 				_currentFd = fd;
 				_currentFd->handleEvent();
 			}
+			activeFds.clear();
 			_currentFd = nullptr;
 			_handling = false;
 
@@ -117,9 +119,21 @@ namespace saf
 		}
 	}
 
-	int EventLoop::addTimer(float delay, const Functor& callback, bool repeated)
+	void EventLoop::runInLoop(const Functor& functor)
 	{
-		auto timer = _timerQueue->createTimer(delay, callback, repeated);
+		if (isInLoopThread())
+		{
+			functor();
+		}
+		else
+		{
+			queueInLoop(functor);
+		}
+	}
+
+	int EventLoop::addTimer(float delay, Functor&& callback, bool repeated)
+	{
+		auto timer = _timerQueue->createTimer(delay, std::move(callback), repeated);
 		runInLoop([this, timer](){
 			_timerQueue->addTimer(timer);
 		});
@@ -136,7 +150,13 @@ namespace saf
 	void EventLoop::queueInLoop(Functor &&functor)
 	{
 		std::lock_guard<std::mutex> guard(_mutex);
-		_functors.push_back(functor);
+		_functors.emplace_back(std::move(functor));
+	}
+
+	void EventLoop::queueInLoop(const Functor& functor)
+	{
+		std::lock_guard<std::mutex> guard(_mutex);
+		_functors.emplace_back(functor);
 	}
 
 	void EventLoop::updateFd(IOFd *fd)
@@ -189,7 +209,7 @@ namespace saf
 			functors.swap(_functors);
 		}
 
-		for (auto functor : functors)
+		for (const Functor& functor : functors)
 		{
 			functor();
 		}

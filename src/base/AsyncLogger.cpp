@@ -50,6 +50,11 @@ namespace saf
 		stop();
 	}
 
+	void AsyncLogger::setPath(const std::string path)
+	{
+		_file = LogFile(path);
+	}
+
 	void AsyncLogger::append(const char* line, size_t len)
 	{
 		std::lock_guard<std::mutex> guard(_mutex);

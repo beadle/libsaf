@@ -31,6 +31,8 @@ namespace saf
 	UdpServer::~UdpServer()
 	{
 		assert(!_running);
+		_cluster->stop();
+
 		LOG_INFO("UdpServer(%p) was destroied", this);
 	}
 
@@ -62,7 +64,6 @@ namespace saf
 
 		_loop->runInLoop([this]()
 		 {
-			 _cluster->stop();
 			 _acceptor->setRecvMessageCallback(nullptr);
 			 _acceptor->stopInLoop();
 

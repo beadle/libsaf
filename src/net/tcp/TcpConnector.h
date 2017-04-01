@@ -26,6 +26,8 @@ namespace saf
 	public:
 		~TcpConnector();
 
+		Socket* getSocket() { return _socket.get(); }
+
 	protected:
 		TcpConnector(EventLoop* loop, Client* master);
 
