@@ -63,8 +63,7 @@ namespace saf
 		assertInLoopThread();
 		LOG_DEBUG("EventLoop(%p) of thread(%d) destructs", this, _threadId);
 
-		_wakeupFd->disableAllInLoop();
-		removeFd(_wakeupFd.get());
+		_wakeupFd->detachInLoop();
 		::close(_wakeupFd->getFd());
 
 		runFunctors();
@@ -97,6 +96,8 @@ namespace saf
 			runFunctors();
 			runTimers();
 		}
+
+		runFunctors();
 
 		_looping = false;
 

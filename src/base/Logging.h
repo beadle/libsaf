@@ -38,10 +38,8 @@ namespace saf
 
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
-//#define LOG_DEBUG(__CONTENT__, ARGS...) saf::log(saf::LogLevel::DEBUG, __FILENAME__, __LINE__, __FUNCTION__, 0, __CONTENT__, ##ARGS);
-//#define LOG_INFO(__CONTENT__, ARGS...) saf::log(saf::LogLevel::INFO, __FILENAME__, __LINE__, nullptr, 0, __CONTENT__, ##ARGS);
-#define LOG_DEBUG(__CONTENT__, ARGS...)
-#define LOG_INFO(__CONTENT__, ARGS...)
+#define LOG_DEBUG(__CONTENT__, ARGS...) saf::log(saf::LogLevel::DEBUG, __FILENAME__, __LINE__, __FUNCTION__, 0, __CONTENT__, ##ARGS);
+#define LOG_INFO(__CONTENT__, ARGS...) saf::log(saf::LogLevel::INFO, __FILENAME__, __LINE__, nullptr, 0, __CONTENT__, ##ARGS);
 #define LOG_WARN(__CONTENT__, ARGS...) saf::log(saf::LogLevel::WARN, __FILENAME__, __LINE__, nullptr, 0, __CONTENT__, ##ARGS);
 #define LOG_ERROR(__CONTENT__, ARGS...) saf::log(saf::LogLevel::ERROR, __FILENAME__, __LINE__, nullptr, errno, __CONTENT__, ##ARGS);
 #define LOG_FATAL(__CONTENT__, ARGS...) saf::log(saf::LogLevel::FATAL, __FILENAME__, __LINE__, nullptr, errno, __CONTENT__, ##ARGS);

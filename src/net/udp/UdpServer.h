@@ -37,6 +37,7 @@ namespace saf
 
 	protected:  /// Connection Thread Methods
 		void onClosedInConnection(const ConnectionPtr&);
+		void removeConnectionInLoop(const ConnectionPtr& conn);
 
 	private:
 		void bindDefaultCallbacks(Connection* conn);

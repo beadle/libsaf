@@ -22,6 +22,8 @@ namespace saf
 	public: /// Thread-Safed Methods
 		virtual ~Connection();
 
+		virtual void close() = 0;
+
 		virtual bool isConnected() const = 0;
 		virtual void setTcpNoDelay(bool on) = 0;
 

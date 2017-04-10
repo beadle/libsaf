@@ -24,7 +24,7 @@ namespace saf
 
 	TcpClient::~TcpClient()
 	{
-		_connector.reset();
+		assert(!_connecting);
 	}
 
 	bool TcpClient::isConnected() const
@@ -51,13 +51,19 @@ namespace saf
 	{
 		_connecting = false;
 
-		_loop->runInLoop([this]()
+		auto pin = shared_from_this();
+		_loop->runInLoop([this, pin]()
 		{
 			if (_connector)
+			{
 				_connector->disconnect();
+			}
 
-			if (_connection && _connection->isConnected())
-				_connection->handleCloseInLoop();
+			if (_connection)
+			{
+				_connection->close();
+				_connection.reset();
+			}
 		});
 	}
 
@@ -87,13 +93,15 @@ namespace saf
 
 	void TcpClient::onClosedInConnection(const ConnectionPtr& conn)
 	{
-		// FIXME: remove self during event handling
-		_loop->queueInLoop([this, conn]()
+		_loop->runInLoop([this, conn]()
 		{
 			removeConnectionInLoop(conn);
-			if (_reconnectDelay > 0)
+			if (_connecting)
 			{
-				_connector->connect(_addr);
+				if (_reconnectDelay > 0)
+				{
+					_connector->connect(_addr);
+				}
 			}
 		});
 	}

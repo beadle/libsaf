@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 	if (argc < 4)
 	{
 		fprintf(stderr, "Usage: server <address> <port> <threads>\n");
-		return 1;
+		return 0;
 	}
 
 	INIT_LOGGER("log/server.log", LogLevel::WARN)
@@ -28,16 +28,17 @@ int main(int argc, char* argv[])
 
 	EventLoop loop;
 
-	TcpServer server(&loop);
-	server.setRecvMessageCallback([&server](const ConnectionPtr& conn, Buffer* buffer)
+	std::shared_ptr<TcpServer> server(new TcpServer(&loop));
+	server->setRecvMessageCallback([&server](const ConnectionPtr& conn, Buffer* buffer)
 	{
 		conn->send(buffer->retrieveAllAsNetString());
 	});
-	server.setConnectChangeCallback([&server](const ConnectionPtr& conn)
+	server->setConnectChangeCallback([&server](const ConnectionPtr& conn)
 	{
 		conn->setTcpNoDelay(true);
 	});
-	server.start(listenAddr, static_cast<size_t>(threadCount));
+	server->start(listenAddr, static_cast<size_t>(threadCount));
 
 	loop.start();
+	return 0;
 }

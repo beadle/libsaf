@@ -22,7 +22,7 @@ namespace saf
 
 	TcpAcceptor::~TcpAcceptor()
 	{
-		stopInLoop();
+		assert(!_listening);
 		::close(_idleFd);
 	}
 

@@ -36,10 +36,7 @@ namespace saf
 	{
 		assert(_status == kDisconnected);
 		if (_socket)
-		{
-			_socket->setObserver(nullptr);
 			delete _socket;
-		}
 	}
 
 	void TcpConnection::setTcpNoDelay(bool on)
@@ -47,7 +44,7 @@ namespace saf
 		_socket->setTcpNoDelay(on);
 	}
 
-	void TcpConnection::forceClose()
+	void TcpConnection::close()
 	{
 		if (_status != kConnected)
 			return;
@@ -55,9 +52,9 @@ namespace saf
 		changeStatus(kDisconnecting);
 
 		auto self = shared_from_this();
-		_loop->queueInLoop([self, this]()
+		_loop->runInLoop([self, this]()
 		{
-			handleCloseInLoop();
+			closeInLoop();
 		});
 	}
 
@@ -69,11 +66,25 @@ namespace saf
 		changeStatus(kDisconnecting);
 
 		auto self = shared_from_this();
-		_loop->queueInLoop([self, this]()
+		_loop->runInLoop([self, this]()
 		{
 			if (!_socket->isWriting())
 				_socket->shutdown();
 		});
+	}
+
+	void TcpConnection::closeInLoop()
+	{
+		_loop->assertInLoopThread();
+
+		_socket->detachInLoop();
+		changeStatus(kDisconnected);
+
+		if (_connectChangeCallback)
+			_connectChangeCallback(shared_from_this());
+
+		if (_closeCallback)
+			_closeCallback(shared_from_this());
 	}
 
 	void TcpConnection::sendInLoop(const char *data, size_t len)
@@ -196,14 +207,7 @@ namespace saf
 
 		assert(_status == kConnected || _status == kDisconnecting);
 
-		_socket->detachInLoop();
-		changeStatus(kDisconnected);
-
-		if (_connectChangeCallback)
-			_connectChangeCallback(shared_from_this());
-
-		if (_closeCallback)
-			_closeCallback(shared_from_this());
+		closeInLoop();
 	}
 
 	void TcpConnection::handleErrorInLoop()

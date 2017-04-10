@@ -24,6 +24,8 @@ namespace saf
 	public: /// Thread-Safed Methods
 		~UdpConnection();
 
+		void close();
+
 		bool isConnected() const { return _connecting; }
 		void setTcpNoDelay(bool on) {}
 
@@ -34,7 +36,9 @@ namespace saf
 
 		void setSenderFd(int fd) { _senderFd = fd; }
 
+		void closeInLoop();
 		void sendInLoop(const char* data, size_t length);
+
 		void handleReadInLoop(const char *data, size_t length);
 		void handleWriteInLoop();
 

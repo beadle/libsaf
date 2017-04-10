@@ -31,8 +31,6 @@ namespace saf
 	UdpServer::~UdpServer()
 	{
 		assert(!_running);
-		_cluster->stop();
-
 		LOG_INFO("UdpServer(%p) was destroied", this);
 	}
 
@@ -62,18 +60,31 @@ namespace saf
 	{
 		_running = false;
 
-		_loop->runInLoop([this]()
-		 {
-			 _acceptor->setRecvMessageCallback(nullptr);
-			 _acceptor->stopInLoop();
+		auto pin = shared_from_this();
+		_loop->runInLoop([this, pin]()
+		{
+			// stop acceptor
+			_acceptor->setRecvMessageCallback(nullptr);
+			_acceptor->stopInLoop();
 
-			 // TODO: Clear All Connections
+			// stop expired checker
+			if (_expiredChecker)
+			 _loop->cancelTimer(_expiredChecker);
 
-			 if (_expiredChecker)
-				 _loop->cancelTimer(_expiredChecker);
+			// clear all connections
+			auto deletes = _connections;
+			for (auto it : deletes)
+			{
+				removeConnectionInLoop(it.second);
+				it.second->close();
+			}
+			_connections.clear();
 
-			 LOG_INFO("UdpServer(%p) was stopped on %s", this, _acceptor->getAddress().toIpPort().c_str());
-		 });
+			// stop EventLoop cluster
+			_cluster->stop();
+
+			LOG_INFO("UdpServer(%p) was stopped on %s", this, _acceptor->getAddress().toIpPort().c_str());
+		});
 	}
 
 	void UdpServer::recvMessageInLoop(InetAddress &addr, Buffer *buffer)
@@ -105,25 +116,47 @@ namespace saf
 	void UdpServer::checkExpiredInLoop()
 	{
 		auto now = time::timestamp();
-		for (auto it = _connections.begin(); it != _connections.end();)
+		std::vector<UdpConnectionPtr> deletes;
+
+		for (auto it = _connections.begin(); it != _connections.end(); )
 		{
 			if (now - it->second->getActivedTime() > ExpiredTime)
 			{
-				UdpConnectionPtr conn = it->second;
+				deletes.emplace_back(it->second);
 				it = _connections.erase(it);
-
-				this->notifyConnectionDestroyed(conn);
 			}
 			else
 			{
 				++it;
 			}
 		}
+
+		for (auto& conn : deletes)
+		{
+			removeConnectionInLoop(conn);
+			conn->close();
+		}
+		deletes.clear();
+	}
+
+	void UdpServer::removeConnectionInLoop(const ConnectionPtr &conn)
+	{
+		unbindDefaultCallbacks(conn.get());
+
+		auto it = _connections.find(conn->getIndex());
+		if (it != _connections.end())
+		{
+			_connections.erase(it);
+		}
 	}
 
 	void UdpServer::onClosedInConnection(const ConnectionPtr& conn)
 	{
-
+		auto pin = shared_from_this();
+		_loop->queueInLoop([this, conn, pin]()
+		{
+			removeConnectionInLoop(conn);
+		});
 	}
 
 	void UdpServer::bindDefaultCallbacks(Connection* conn)

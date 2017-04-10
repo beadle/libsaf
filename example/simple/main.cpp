@@ -12,78 +12,6 @@
 using namespace std;
 using namespace saf;
 
-void test_timer(saf::EventLoop* loop)
-{
-	for (int i=0; i<50; ++i)
-	{
-		float delay = 2.0f + (float)((double) rand() / (RAND_MAX)) * 8.0f;
-		loop->addTimer(delay, [delay](){
-			std::cout << "once timer(" << delay << ")" << std::endl;
-		});
-	}
-
-	for (int i=0; i<5; ++i)
-	{
-		loop->addTimer(4.0, [loop](){
-			int fd = 1 + (int)(((double) rand() / (RAND_MAX)) * 40.0f);
-			loop->cancelTimer(fd);
-			std::cout << "cancel timer(" << fd << ")" << std::endl;
-		});
-	}
-
-	for (int i=0; i<5; ++i)
-	{
-		loop->addTimer(5.0, [loop](){
-			float delay = 2.0f + (float)((double) rand() / (RAND_MAX)) * 3.0f;
-			loop->addTimer(delay, [delay](){
-				std::cout << "inner add timer(" << delay + 5.0 << ")" << std::endl;
-			});
-		});
-	}
-
-	int interval = 3;
-	loop->addTimer(interval, [interval](){
-		std::cout << "repeated timer(" << interval << ")" << std::endl;
-	}, true);
-
-}
-
-void thread1_func(saf::EventLoop* loop)
-{
-	loop->runInLoop([loop](){
-		std::cout << "Thread1 func" << std::endl;
-	});
-}
-
-void thread2_func(saf::EventLoop* loop)
-{
-	test_timer(loop);
-}
-
-
-class A
-{
-public:
-	A() {
-		std::cout << this << __FUNCTION__ << "(" << __LINE__ << ")" << std::endl;
-	}
-	A(const A& other) {
-		std::cout << this << __FUNCTION__ << "(" << __LINE__ << ")" << std::endl;
-	}
-	A(A&& other) {
-		std::cout << this << __FUNCTION__ << "(" << __LINE__ << ")" << std::endl;
-	}
-	void operator=(const A& other) {
-		std::cout << this << __FUNCTION__ << "(" << __LINE__ << ")" << std::endl;
-	}
-	void operator=(A&& other) {
-		std::cout << this << __FUNCTION__ << "(" << __LINE__ << ")" << std::endl;
-	}
-	~A() {
-		std::cout << this << __FUNCTION__ << "(" << __LINE__ << ")" << std::endl;
-	}
-};
-
 
 int main()
 {
@@ -99,9 +27,9 @@ int main()
 //		conn->send(buffer->retrieveAllAsNetString());
 //	});
 
-	TcpServer tcpServer(&loop);
-	tcpServer.start(InetAddress("127.0.0.1", 5000), 1);
-	tcpServer.setRecvMessageCallback([&tcpServer](const ConnectionPtr& conn, Buffer* buffer)
+	std::shared_ptr<TcpServer> tcpServer(new TcpServer(&loop));
+	tcpServer->start(InetAddress("127.0.0.1", 5000), 1);
+	tcpServer->setRecvMessageCallback([&tcpServer](const ConnectionPtr& conn, Buffer* buffer)
 	{
 		conn->send(std::string("From TcpServer - "));
 		conn->send(buffer->retrieveAllAsNetString());
@@ -110,33 +38,29 @@ int main()
 //		tcpServer.stop();
 //	});
 
-	TcpClient client(&loop);
-	client.setReconnectDelay(3.0);
-	client.setRecvMessageCallback([](const ConnectionPtr& conn, Buffer* buffer)
+	std::shared_ptr<TcpClient> client(new TcpClient(&loop));
+	client->setReconnectDelay(3.0);
+	client->setRecvMessageCallback([](const ConnectionPtr& conn, Buffer* buffer)
 	{
 		LOG_INFO("TcpClient RecvMessageCallback: %s", buffer->retrieveAllAsString().c_str());
 	});
 
 	loop.addTimer(1.0, [&client]()
 	{
-		client.connect(InetAddress("127.0.0.1", 5000));
+		client->connect(InetAddress("127.0.0.1", 5000));
 	});
 
 	loop.addTimer(3.0, [&client]()
 	{
 		static int counter = 'A';
-		auto connection = client.getConnection();
+		auto connection = client->getConnection();
 		if (connection)
 			connection->send(std::string("Hello World: ") + char(counter++));
 	}, true);
 
-	loop.addTimer(5.0, [&client](){
-		client.disconnect();
-	});
-	loop.addTimer(6.0, [&tcpServer](){
-		tcpServer.stop();
-	});
-	loop.addTimer(7.0, [&loop](){
+	loop.addTimer(5.0, [&client, &tcpServer, &loop](){
+		client->disconnect();
+		tcpServer->stop();
 		loop.stop();
 	});
 

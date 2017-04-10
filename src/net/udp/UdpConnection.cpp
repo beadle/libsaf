@@ -26,6 +26,15 @@ namespace saf
 
 	}
 
+	void UdpConnection::close()
+	{
+		auto pin = shared_from_this();
+		_loop->runInLoop([this, pin]()
+		{
+			closeInLoop();
+		});
+	}
+
 	void UdpConnection::handleReadInLoop(const char *data, size_t length)
 	{
 		_loop->assertInLoopThread();
@@ -37,6 +46,14 @@ namespace saf
 			_recvMessageCallback(shared_from_this(), &_inputBuffer);
 		else
 			_inputBuffer.retrieveAll();
+	}
+
+	void UdpConnection::closeInLoop()
+	{
+		onConnectDestroyedInLoop();
+
+		if (_closeCallback)
+			_closeCallback(shared_from_this());
 	}
 
 	void UdpConnection::sendInLoop(const char *data, size_t length)

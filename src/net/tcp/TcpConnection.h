@@ -40,7 +40,7 @@ namespace saf
 		void setTcpNoDelay(bool on);
 
 		void shutdown();
-		void forceClose();
+		void close();
 
 	public:  /// IOFdObserber Methods
 		void onReadInIOFd(IOFd*);
@@ -56,6 +56,8 @@ namespace saf
 
 	protected:  /// Looper Thread Methods
 		void sendInLoop(const char* data, size_t len);
+		void closeInLoop();
+
 		ssize_t readInLoop();
 		ssize_t writeInLoop(const char* buffer, size_t length);
 

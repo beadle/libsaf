@@ -18,13 +18,13 @@ file(GLOB_RECURSE SOURCES *.cpp)
 # add include paths
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
-## generate dynamic library
-#add_library(core_so SHARED ${SOURCES})
-#set_target_properties(core_so PROPERTIES OUTPUT_NAME "core")
+# generate dynamic library
+add_library(core_so SHARED ${SOURCES})
+set_target_properties(core_so PROPERTIES OUTPUT_NAME "core")
 
 ## add include paths
 #include_directories(${PROJECT_SOURCE_DIR}/src)
 #
-# generate static library
-add_library(core_a STATIC ${SOURCES})
-set_target_properties(core_a PROPERTIES OUTPUT_NAME "core")
+## generate static library
+#add_library(core_a STATIC ${SOURCES})
+#set_target_properties(core_a PROPERTIES OUTPUT_NAME "core")

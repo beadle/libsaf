@@ -18,24 +18,24 @@ public:
 
 	void connect()
 	{
-		_client.connect(_addr);
+		_client->connect(_addr);
 	}
 
 	void disconnect()
 	{
-		_client.disconnect();
+		_client->disconnect();
 	}
 
-	bool isConnected() const { return _client.isConnected(); }
+	bool isConnected() const { return _client->isConnected(); }
 
-	TcpClient* getClient() { return &_client; }
+	TcpClient* getClient() { return _client.get(); }
 
 	int64_t getReadBytes() const { return _readBytes; }
 	int64_t getWriteBytes() const { return _writeBytes; }
 	int64_t getReadMessages() const { return _readMessages; }
 
 private:
-	TcpClient _client;
+	std::shared_ptr<TcpClient> _client;
 	Master* _master;
 	InetAddress _addr;
 
@@ -143,14 +143,14 @@ private:
 
 
 Session::Session(EventLoop* loop, Master* master, const InetAddress& serverAddr) :
-		_client(loop),
+		_client(new TcpClient(loop)),
 		_master(master),
 		_addr(serverAddr),
 		_readBytes(0),
 		_writeBytes(0),
 		_readMessages(0)
 {
-	_client.setConnectChangeCallback([this](const ConnectionPtr& conn)
+	_client->setConnectChangeCallback([this](const ConnectionPtr& conn)
 	{
 		if (conn->isConnected())
 		{
@@ -163,14 +163,14 @@ Session::Session(EventLoop* loop, Master* master, const InetAddress& serverAddr)
 			_master->onDisconnected(conn);
 		}
 	});
-	_client.setRecvMessageCallback([this](const ConnectionPtr& conn, Buffer* buffer)
-   {
-	   ++_readMessages;
-	   _readBytes += buffer->readableBytes();
-	   _writeBytes += buffer->readableBytes();
-	   conn->send(buffer->peek(), buffer->readableBytes());
-	   buffer->retrieveAll();
-   });
+	_client->setRecvMessageCallback([this](const ConnectionPtr& conn, Buffer* buffer)
+	{
+		++_readMessages;
+		_readBytes += buffer->readableBytes();
+		_writeBytes += buffer->readableBytes();
+		conn->send(buffer->peek(), buffer->readableBytes());
+		buffer->retrieveAll();
+	});
 }
 
 
@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
 	{
 		fprintf(stderr, "Usage: client <host_ip> <port> <threads> <blocksize> ");
 		fprintf(stderr, "<sessions> <time>\n");
-		return 1;
+		return 0;
 	}
 
 	INIT_LOGGER("log/client.log", LogLevel::WARN)
@@ -201,5 +201,5 @@ int main(int argc, char* argv[])
 	Master master(&loop, serverAddr, blockSize, sessionCount, timeout, threadCount);
 
 	loop.start();
-	return 1;
+	return 0;
 }

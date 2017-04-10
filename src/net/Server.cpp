@@ -52,9 +52,9 @@ namespace saf
 
 	void Server::notifyConnectionEstablished(const ConnectionPtr& conn)
 	{
+		this->bindDefaultCallbacks(conn.get());
 		conn->getLooper()->queueInLoop([this, conn]()
 		{
-			this->bindDefaultCallbacks(conn.get());
 			conn->onConnectEstablishedInLoop();
 
 			LOG_INFO("Server(%p) create connection(%s)", this, conn->getAddress().toIpPort().c_str());
@@ -63,9 +63,9 @@ namespace saf
 
 	void Server::notifyConnectionDestroyed(const ConnectionPtr& conn)
 	{
+		this->unbindDefaultCallbacks(conn.get());
 		conn->getLooper()->queueInLoop([this, conn]()
 		{
-			this->unbindDefaultCallbacks(conn.get());
 			conn->onConnectDestroyedInLoop();
 
 			LOG_INFO("Server(%p) drop connection(%s)", this, conn->getAddress().toIpPort().c_str());

@@ -52,15 +52,17 @@ namespace saf
 	{
 		_running = false;
 
-		_loop->runInLoop([this]()
+		auto pin = shared_from_this();
+		_loop->runInLoop([this, pin]()
 		{
 			_acceptor->setAcceptCallback(nullptr);
 			_acceptor->stopInLoop();
 
-			for (auto& conn : _connections)
+			auto deleted = _connections;
+			for (auto& conn : deleted)
 			{
-				conn.second->setCloseCallback(nullptr);
-				conn.second->forceClose();
+				removeConnectionInLoop(conn.second);
+				conn.second->close();
 			}
 			_connections.clear();
 
@@ -88,14 +90,17 @@ namespace saf
 	{
 		_loop->assertInLoopThread();
 
-		_connections.erase(conn->getIndex());
+		auto it = _connections.find(conn->getIndex());
+		if (it != _connections.end())
+			_connections.erase(it);
 
 		this->notifyConnectionDestroyed(conn);
 	}
 
 	void TcpServer::onClosedInConnection(const ConnectionPtr& conn)
 	{
-		_loop->queueInLoop([this, conn]()
+		auto pin = shared_from_this();
+		_loop->queueInLoop([this, conn, pin]()
 		{
 			this->removeConnectionInLoop(conn);
 		});

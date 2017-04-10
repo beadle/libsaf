@@ -18,7 +18,7 @@ namespace saf
 {
 	TcpConnector::TcpConnector(EventLoop* loop, Client* master) :
 		_loop(loop),
-		_stopping(false),
+		_stopping(true),
 		_status(kDisconnected),
 		_master(master)
 	{
@@ -27,20 +27,21 @@ namespace saf
 
 	TcpConnector::~TcpConnector()
 	{
-
+		assert(!!_stopping);
+		assert(!_socket);
 	}
 
 	void TcpConnector::connect(const InetAddress &addr)
 	{
 		_addr = addr;
 		_stopping = false;
-		_loop->runInLoop(std::bind(&TcpConnector::connectInLoop, this));
+		_loop->runInLoop(std::bind(&TcpConnector::connectInLoop, shared_from_this()));
 	}
 
 	void TcpConnector::disconnect()
 	{
 		_stopping = true;
-		_loop->runInLoop(std::bind(&TcpConnector::disconnectInLoop, this));
+		_loop->runInLoop(std::bind(&TcpConnector::disconnectInLoop, shared_from_this()));
 	}
 
 	void TcpConnector::connectInLoop()
@@ -100,10 +101,6 @@ namespace saf
 	{
 		changeStatus(kConnecting);
 
-//		_socket->setReadCallback(nullptr);
-//		_socket->setWriteCallback(std::bind(&TcpConnector::handleWriteInLoop, this));
-//		_socket->setErrorCallback(std::bind(&TcpConnector::handleErrorInLoop, this));
-//		_socket->setCloseCallback(std::bind(&TcpConnector::handleCloseInLoop, this));
 		_socket->setObserver(this);
 		_socket->attachInLoop(_loop);
 		_socket->enableWriteInLoop();

@@ -29,6 +29,7 @@ namespace saf
 	{
 		assert(!_handling);
 		assert(_status != Status::ADDED);
+		assert(!_looper);
 		assert(isNoneEvent());
 	}
 
@@ -88,6 +89,8 @@ namespace saf
 
 		if ((_revents & POLLHUP) && !(_revents & POLLIN))
 		{
+			_handling = false;
+			_revents = 0;
 			if (LIKELY(_observer))
 			{
 				_observer->onCloseInIOFd(this);
@@ -97,9 +100,6 @@ namespace saf
 				if (_closeCallback)
 					_closeCallback();
 			}
-
-			_handling = false;
-			_revents = 0;
 			return;
 		}
 

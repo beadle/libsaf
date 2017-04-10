@@ -15,7 +15,7 @@ namespace saf
 	class EventLoop;
 	class EventLoopCluster;
 
-	class Server
+	class Server : public std::enable_shared_from_this<Server>
 	{
 	public:
 		Server(EventLoop* loop);
