@@ -61,15 +61,4 @@ namespace saf
 		});
 	}
 
-	void Server::notifyConnectionDestroyed(const ConnectionPtr& conn)
-	{
-		this->unbindDefaultCallbacks(conn.get());
-		conn->getLooper()->queueInLoop([this, conn]()
-		{
-			conn->onConnectDestroyedInLoop();
-
-			LOG_INFO("Server(%p) drop connection(%s)", this, conn->getAddress().toIpPort().c_str());
-		});
-	}
-
 }

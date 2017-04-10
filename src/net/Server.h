@@ -48,7 +48,6 @@ namespace saf
 		virtual void onClosedInConnection(const ConnectionPtr&) = 0;
 
 		void notifyConnectionEstablished(const ConnectionPtr&);
-		void notifyConnectionDestroyed(const ConnectionPtr&);
 
 	protected:
 		bool _running;

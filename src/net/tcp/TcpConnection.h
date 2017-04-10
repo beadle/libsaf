@@ -67,7 +67,6 @@ namespace saf
 		void handleCloseInLoop();
 
 		void onConnectEstablishedInLoop();
-		void onConnectDestroyedInLoop();
 
 	protected:
 		Socket* _socket;

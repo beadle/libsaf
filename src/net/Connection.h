@@ -68,9 +68,7 @@ namespace saf
 
 	protected:  /// Looper Thread Methods
 		virtual void sendInLoop(const char* data, size_t length) = 0;
-
 		virtual void onConnectEstablishedInLoop() = 0;
-		virtual void onConnectDestroyedInLoop() = 0;
 
 		friend class Server;
 		friend class Client;

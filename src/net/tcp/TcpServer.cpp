@@ -26,8 +26,6 @@ namespace saf
 	TcpServer::~TcpServer()
 	{
 		assert(!_running);
-		_cluster->stop();
-
 		LOG_INFO("TcpServer(%p) was destroied", this);
 	}
 
@@ -55,9 +53,11 @@ namespace saf
 		auto pin = shared_from_this();
 		_loop->runInLoop([this, pin]()
 		{
+			// stop acceptor
 			_acceptor->setAcceptCallback(nullptr);
 			_acceptor->stopInLoop();
 
+			// clear all connections
 			auto deleted = _connections;
 			for (auto& conn : deleted)
 			{
@@ -65,6 +65,9 @@ namespace saf
 				conn.second->close();
 			}
 			_connections.clear();
+
+			// stop EventLoop cluster
+			_cluster->stop();
 
 			LOG_INFO("TcpServer(%p) was stopped on %s", this, _acceptor->getAddress().toIpPort().c_str());
 		});
@@ -90,11 +93,11 @@ namespace saf
 	{
 		_loop->assertInLoopThread();
 
+		unbindDefaultCallbacks(conn.get());
+
 		auto it = _connections.find(conn->getIndex());
 		if (it != _connections.end())
 			_connections.erase(it);
-
-		this->notifyConnectionDestroyed(conn);
 	}
 
 	void TcpServer::onClosedInConnection(const ConnectionPtr& conn)

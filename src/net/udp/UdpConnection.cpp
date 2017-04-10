@@ -28,6 +28,8 @@ namespace saf
 
 	void UdpConnection::close()
 	{
+		_connecting = false;
+
 		auto pin = shared_from_this();
 		_loop->runInLoop([this, pin]()
 		{
@@ -50,7 +52,11 @@ namespace saf
 
 	void UdpConnection::closeInLoop()
 	{
-		onConnectDestroyedInLoop();
+		_loop->assertInLoopThread();
+		_connecting = false;
+
+		if (_connectChangeCallback)
+			_connectChangeCallback(shared_from_this());
 
 		if (_closeCallback)
 			_closeCallback(shared_from_this());
@@ -112,16 +118,6 @@ namespace saf
 		_loop->assertInLoopThread();
 
 		_connecting = true;
-
-		if (_connectChangeCallback)
-			_connectChangeCallback(shared_from_this());
-	}
-
-	void UdpConnection::onConnectDestroyedInLoop()
-	{
-		_loop->assertInLoopThread();
-
-		_connecting = false;
 
 		if (_connectChangeCallback)
 			_connectChangeCallback(shared_from_this());

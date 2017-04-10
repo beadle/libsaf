@@ -43,7 +43,6 @@ namespace saf
 		void handleWriteInLoop();
 
 		void onConnectEstablishedInLoop();
-		void onConnectDestroyedInLoop();
 
 		friend class UdpServer;
 

@@ -230,15 +230,6 @@ namespace saf
 			_connectChangeCallback(shared_from_this());
 	}
 
-	void TcpConnection::onConnectDestroyedInLoop()
-	{
-		_loop->assertInLoopThread();
-
-		/// redundant code
-		_socket->detachInLoop();
-		changeStatus(kDisconnected);
-	}
-
 	void TcpConnection::onReadInIOFd(IOFd*)
 	{
 		handleReadInLoop();

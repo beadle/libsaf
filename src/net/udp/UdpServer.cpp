@@ -133,7 +133,6 @@ namespace saf
 
 		for (auto& conn : deletes)
 		{
-			removeConnectionInLoop(conn);
 			conn->close();
 		}
 		deletes.clear();
