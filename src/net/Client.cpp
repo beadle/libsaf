@@ -52,12 +52,4 @@ namespace saf
 		});
 	}
 
-	void Client::notifyConnectionDestroyed(const ConnectionPtr& conn)
-	{
-		conn->getLooper()->runInLoop([this, conn]()
-		{
-			this->unbindDefaultCallbacks(conn.get());
-			conn->onConnectDestroyedInLoop();
-		});
-	}
 }

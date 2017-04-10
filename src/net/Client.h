@@ -50,7 +50,6 @@ namespace saf
 		virtual void unbindDefaultCallbacks(Connection* ptr);
 
 		void notifyConnectionEstablished(const ConnectionPtr&);
-		void notifyConnectionDestroyed(const ConnectionPtr&);
 
 	protected:
 		float _reconnectDelay;

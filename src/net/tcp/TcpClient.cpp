@@ -78,7 +78,7 @@ namespace saf
 		assert(conn->getLooper() == _loop);
 		assert(conn.get() == _connection.get());
 
-		notifyConnectionDestroyed(conn);
+		unbindDefaultCallbacks(conn.get());
 		_connection.reset();
 	}
 
@@ -93,15 +93,13 @@ namespace saf
 
 	void TcpClient::onClosedInConnection(const ConnectionPtr& conn)
 	{
-		_loop->runInLoop([this, conn]()
+		auto pin = shared_from_this();
+		_loop->runInLoop([this, conn, pin]()
 		{
 			removeConnectionInLoop(conn);
-			if (_connecting)
+			if (_connecting && _reconnectDelay > 0)
 			{
-				if (_reconnectDelay > 0)
-				{
-					_connector->connect(_addr);
-				}
+				_connector->connect(_addr);
 			}
 		});
 	}
