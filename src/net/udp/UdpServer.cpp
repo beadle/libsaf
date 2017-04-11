@@ -75,7 +75,7 @@ namespace saf
 			auto deletes = _connections;
 			for (auto it : deletes)
 			{
-				removeConnectionInLoop(it.second);
+				unbindDefaultCallbacks(it.second.get());
 				it.second->close();
 			}
 			_connections.clear();

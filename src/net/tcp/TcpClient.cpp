@@ -13,8 +13,6 @@
 
 namespace saf
 {
-	std::atomic_int gConnectionIndex(1000);
-
 	TcpClient::TcpClient(EventLoop* loop) :
 		Client(loop),
 		_connector(new TcpConnector(loop, this))
@@ -61,6 +59,7 @@ namespace saf
 
 			if (_connection)
 			{
+				unbindDefaultCallbacks(_connection.get());
 				_connection->close();
 				_connection.reset();
 			}
@@ -99,7 +98,11 @@ namespace saf
 			removeConnectionInLoop(conn);
 			if (_connecting && _reconnectDelay > 0)
 			{
-				_connector->connect(_addr);
+				auto self = shared_from_this();
+				_loop->queueInLoop([this, self]()
+				{
+					connect(_addr);
+				});
 			}
 		});
 	}

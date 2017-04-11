@@ -58,10 +58,9 @@ namespace saf
 			_acceptor->stopInLoop();
 
 			// clear all connections
-			auto deleted = _connections;
-			for (auto& conn : deleted)
+			for (auto& conn : _connections)
 			{
-				removeConnectionInLoop(conn.second);
+				unbindDefaultCallbacks(conn.second.get());
 				conn.second->close();
 			}
 			_connections.clear();

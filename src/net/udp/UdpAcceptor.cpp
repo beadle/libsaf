@@ -36,10 +36,6 @@ namespace saf
 		_socket->setReuseAddr(true);
 		_socket->setReusePort(reusePort);
 		_socket->setObserver(this);
-//		_socket->setReadCallback(std::bind(&UdpAcceptor::handleReadInLoop, this));
-//		_socket->setWriteCallback(std::bind(&UdpAcceptor::handleWriteInLoop, this));
-//		_socket->setErrorCallback(std::bind(&UdpAcceptor::handleErrorInLoop, this));
-//		_socket->setCloseCallback(std::bind(&UdpAcceptor::handleCloseInLoop, this));
 		_socket->bind(_addr);
 		_socket->enableReadInLoop();
 	}
