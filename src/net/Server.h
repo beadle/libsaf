@@ -5,6 +5,7 @@
 #ifndef EXAMPLE_SERVER_H
 #define EXAMPLE_SERVER_H
 
+#include <base/Noncopyable.h>
 #include "Types.h"
 #include "InetAddress.h"
 
@@ -15,7 +16,7 @@ namespace saf
 	class EventLoop;
 	class EventLoopCluster;
 
-	class Server : public std::enable_shared_from_this<Server>
+	class Server : public std::enable_shared_from_this<Server>, public Noncopyable
 	{
 	public:
 		Server(EventLoop* loop);

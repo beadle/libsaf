@@ -6,6 +6,7 @@
 #define LIBSAF_SOCKET_H
 
 
+#include <base/Noncopyable.h>
 #include "IOFd.h"
 #include "net/InetAddress.h"
 #include "net/Types.h"
@@ -13,7 +14,7 @@
 
 namespace saf
 {
-	class Socket : public IOFd
+	class Socket : public IOFd, public Noncopyable
 	{
 	public:
 		static Socket* create(NetProtocal protocal, sa_family_t family=AF_INET);

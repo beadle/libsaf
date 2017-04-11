@@ -9,13 +9,14 @@
 
 #include "InetAddress.h"
 #include "Types.h"
+#include "base/Noncopyable.h"
 
 
 namespace saf
 {
 	class EventLoop;
 
-	class Client : public std::enable_shared_from_this<Client>
+	class Client : public std::enable_shared_from_this<Client>, public Noncopyable
 	{
 	public:  /// Thread-Safed Methods
 		Client(EventLoop* loop);

@@ -11,13 +11,14 @@
 #include "NetString.h"
 #include "InetAddress.h"
 #include "Types.h"
+#include "base/Noncopyable.h"
 
 
 namespace saf
 {
 	class EventLoop;
 
-	class Connection : public std::enable_shared_from_this<Connection>
+	class Connection : public std::enable_shared_from_this<Connection>, public Noncopyable
 	{
 	public: /// Thread-Safed Methods
 		virtual ~Connection();
@@ -72,6 +73,10 @@ namespace saf
 
 		friend class Server;
 		friend class Client;
+
+	protected:
+		Connection(const Connection&) = delete;
+		Connection& operator=(const Connection&) = delete;
 
 	protected:
 		long _activedTime;

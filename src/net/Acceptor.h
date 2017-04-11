@@ -7,6 +7,7 @@
 
 #include <memory>
 #include "InetAddress.h"
+#include "base/Noncopyable.h"
 
 
 namespace saf
@@ -14,7 +15,7 @@ namespace saf
 	class Socket;
 	class EventLoop;
 
-	class Acceptor
+	class Acceptor : public Noncopyable
 	{
 	public:
 		Acceptor(EventLoop *loop);

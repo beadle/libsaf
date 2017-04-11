@@ -7,12 +7,13 @@
 
 #include <functional>
 #include <vector>
+#include <base/Noncopyable.h>
 
 #include "net/fd/IOFd.h"
 
 namespace saf
 {
-	class Poller
+	class Poller : public Noncopyable
 	{
 	public:
 		static Poller* createPoller();

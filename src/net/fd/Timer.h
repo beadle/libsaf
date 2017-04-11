@@ -8,12 +8,13 @@
 
 #include "../Fd.h"
 #include <functional>
+#include <base/Noncopyable.h>
 
 namespace saf
 {
 	typedef std::function<void()> TimerCallback;
 
-	class Timer : public Fd
+	class Timer : public Fd, public Noncopyable
 	{
 	protected:
 		Timer(int fd, long interval, TimerCallback&& callback);

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "base/CurrentThread.h"
+#include "base/Noncopyable.h"
 
 
 namespace saf
@@ -20,7 +21,7 @@ namespace saf
 	class Poller;
 	class TimerQueue;
 
-	class EventLoop
+	class EventLoop : public Noncopyable
 	{
 	public:
 		typedef std::function<void()> Functor;

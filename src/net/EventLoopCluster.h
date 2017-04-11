@@ -9,6 +9,7 @@
 #include <vector>
 #include <thread>
 #include <atomic>
+#include <base/Noncopyable.h>
 
 #include "base/CountDownLatch.h"
 
@@ -18,7 +19,7 @@ namespace saf
 	class EventLoop;
 	class ThreadPool;
 
-	class EventLoopCluster
+	class EventLoopCluster : public Noncopyable
 	{
 		class Pair
 		{
