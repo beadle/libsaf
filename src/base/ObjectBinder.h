@@ -18,66 +18,21 @@ namespace saf
 		delete static_cast<T*>(pointer);
 	}
 
-	class SharedBinder
+
+	class ObjectBinder
 	{
 	public:
 		typedef std::function<void(void*)> Deleter;
 
 	public:
-		SharedBinder() :
-			_pointer(nullptr),
-			_deleter(nullptr)
-		{
-
-		}
-
-		~SharedBinder()
-		{
-			unbindObject();
-		}
-
-		template <class T>
-		void bindObject(const std::shared_ptr<T>& pointer)
-		{
-			_pointer = new std::shared_ptr<T>(pointer);
-			_deleter = &PointerDeleter<std::shared_ptr<T> >;
-		}
-
-		template <class T>
-		const std::shared_ptr<T>& getBindObject()
-		{
-			return *(static_cast<std::shared_ptr<T>* >(_pointer));
-		}
-
-		void unbindObject()
-		{
-			if (_pointer)
-			{
-				_deleter(_pointer);
-				_pointer = nullptr;
-			}
-		}
-
-	private:
-		void* _pointer;
-		Deleter _deleter;
-	};
-
-
-	class WeakBinder
-	{
-	public:
-		typedef std::function<void(void*)> Deleter;
-
-	public:
-		SharedBinder() :
+		ObjectBinder() :
 				_pointer(nullptr),
 				_deleter(nullptr)
 		{
 
 		}
 
-		~SharedBinder()
+		~ObjectBinder()
 		{
 			unbindObject();
 		}
@@ -110,7 +65,7 @@ namespace saf
 		}
 
 		template <class T>
-		const std::shared_ptr& objectFromShared()
+		const std::shared_ptr<T>& objectFromShared()
 		{
 			return *(static_cast<std::shared_ptr<T>*>(_pointer));
 		}
