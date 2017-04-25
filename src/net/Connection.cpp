@@ -26,7 +26,7 @@ namespace saf
 
 	Connection::~Connection()
 	{
-
+		
 	}
 
 	void Connection::send(NetString data)

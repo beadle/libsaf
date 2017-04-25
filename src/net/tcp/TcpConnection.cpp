@@ -138,11 +138,6 @@ namespace saf
 		_status = status;
 	}
 
-	ssize_t TcpConnection::readInLoop()
-	{
-		return _inputBuffer.readFd(_socket->getFd());
-	}
-
 	ssize_t TcpConnection::writeInLoop(const char *buffer, size_t length)
 	{
 		return ::write(_socket->getFd(), buffer, length);
@@ -152,7 +147,7 @@ namespace saf
 	{
 		_loop->assertInLoopThread();
 
-		ssize_t n = readInLoop();
+		ssize_t n = _inputBuffer.readFd(_socket->getFd());;
 		if (n > 0)
 		{
 			_activedTime = time::timestamp();

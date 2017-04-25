@@ -58,7 +58,6 @@ namespace saf
 		void sendInLoop(const char* data, size_t len);
 		void closeInLoop();
 
-		ssize_t readInLoop();
 		ssize_t writeInLoop(const char* buffer, size_t length);
 
 		void handleReadInLoop();
@@ -71,9 +70,6 @@ namespace saf
 	protected:
 		Socket* _socket;
 		std::atomic_int _status;
-
-		Buffer _inputBuffer;
-		Buffer _outputBuffer;
 	};
 
 
