@@ -11,12 +11,14 @@
 #include "NetString.h"
 #include "InetAddress.h"
 #include "Types.h"
+#include "Buffer.h"
 #include "base/Noncopyable.h"
 
 
 namespace saf
 {
 	class EventLoop;
+	class Pipeline;
 
 	class Connection : public std::enable_shared_from_this<Connection>, public Noncopyable
 	{
@@ -89,6 +91,9 @@ namespace saf
 		WriteCompleteCallback _writeCompleteCallback;
 		ConnectChangeCallback _connectChangeCallback;
 		CloseCallback _closeCallback;
+
+		Buffer _inputBuffer;
+		Buffer _outputBuffer;
 	};
 
 }
