@@ -13,22 +13,9 @@ using namespace std;
 using namespace saf;
 
 
-class TestBinder : public ObjectBinder
-{
-
-};
-
 int main()
 {
 	INIT_LOGGER("log/debug.log", LogLevel::DEBUG)
-
-//	std::shared_ptr<int> userObject(new int);
-//	*userObject = 100;
-//
-//	TestBinder binder;
-//	binder.bindWeak<int>(userObject);
-//	auto object = binder.objectFromWeak<int>();
-//	std::cout << "================================ bind object:" << *object << endl;
 
 	EventLoop loop;
 

@@ -1,6 +1,7 @@
 # founders
 bin
 log
+build
 benchmark
 cmake-build-debug
 .idea
