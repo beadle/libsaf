@@ -1,6 +1,4 @@
 
-set(CMAKE_CXX_FLAGS "-g -std=c++11 ${CMAKE_CXX_FLAGS}")
-
 # generate core.h
 file(GLOB_RECURSE HEADERS RELATIVE ${PROJECT_SOURCE_DIR}/src *.h)
 list(REMOVE_ITEM HEADERS "core.h")

@@ -4,21 +4,21 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "taskName": "cmake",
+            "taskName": "reload",
             "type": "shell",
-            "command": "mkdir -p build; cd build; cmake ..",
+            "command": "./.vscode/reload.sh",
             "problemMatcher": []
         },
         {
-            "taskName": "make",
+            "taskName": "build",
             "type": "shell",
-            "command": "cd build; make",
+            "command": "./.vscode/build.sh",
             "problemMatcher": []
         },
         {
-            "taskName": "clean",
+            "taskName": "rebuild",
             "type": "shell",
-            "command": "rm -rf build bin",
+            "command": "./.vscode/rebuild.sh",
             "problemMatcher": []
         }
     ]
