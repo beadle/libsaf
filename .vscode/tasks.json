@@ -7,19 +7,31 @@
             "taskName": "reload",
             "type": "shell",
             "command": "./.vscode/reload.sh",
-            "problemMatcher": []
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         },
         {
             "taskName": "build",
             "type": "shell",
             "command": "./.vscode/build.sh",
-            "problemMatcher": []
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         },
         {
             "taskName": "rebuild",
             "type": "shell",
             "command": "./.vscode/rebuild.sh",
-            "problemMatcher": []
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ]
 }

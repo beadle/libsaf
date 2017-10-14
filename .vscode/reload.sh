@@ -6,4 +6,4 @@ cd `dirname $0`
 cd ..
 mkdir -p build
 cd build
-cmake ..
+cmake -Werror=dev ..

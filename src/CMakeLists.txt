@@ -9,9 +9,6 @@ foreach(header ${HEADERS})
 endforeach()
 file(APPEND core.h "\n\n#endif")
 
-# config library output path
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin/lib)
-
 # find all cpps
 file(GLOB_RECURSE SOURCES *.cpp)
 
